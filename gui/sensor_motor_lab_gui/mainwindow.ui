@@ -44,7 +44,7 @@
      </rect>
     </property>
    </widget>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -62,7 +62,11 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="cmdLineEdit"/>
+      <widget class="QLineEdit" name="cmdLineEdit">
+       <property name="text">
+        <string>0</string>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QPushButton" name="sendCmdButton">

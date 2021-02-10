@@ -34,12 +34,14 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
+        publishernode.cpp \
         qcustomplot.cpp \
         subscribernode.cpp
 
 HEADERS += \
         mainwindow.h \
         msgs.h \
+        publishernode.h \
         qcustomplot.h \
         subscribernode.h
 

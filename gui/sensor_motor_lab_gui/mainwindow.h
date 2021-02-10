@@ -10,6 +10,7 @@
 #include <thread>
 
 #include "subscribernode.h"
+#include "publishernode.h"
 
 namespace Ui {
 class MainWindow;
@@ -24,6 +25,7 @@ public:
 
 signals:
   void init();
+  void sigSendCmd(float);
 
 //public slots:
 //  void slotDisplayMotorFb(float);
@@ -38,8 +40,10 @@ private:
   Ui::MainWindow *ui;
   ros::NodeHandle nh_;
   SubscriberNode *p_subscriber_node_;
+  PublisherNode *p_publisher_node_;
 
   QThread *p_subcriber_node_thread_;
+  QThread *p_publisher_node_thread_;
 
   const int plot_size_ = 100;
   QVector<double> motor_fb_plot_x_, motor_fb_plot_y_,

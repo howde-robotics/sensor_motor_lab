@@ -28,6 +28,12 @@ MainWindow::MainWindow(QWidget *parent) :
   }
 
   // ROS
+  p_publisher_node_ = new PublisherNode(&nh_);
+  connect(this, SIGNAL(sigSendCmd(float)), p_publisher_node_, SLOT(slotPubCmd(float)));
+  p_publisher_node_thread_ = new QThread();
+  connect(p_publisher_node_, SIGNAL(finished()), p_publisher_node_thread_, SLOT(quit()));
+  p_publisher_node_->moveToThread(p_publisher_node_thread_);
+
   p_subscriber_node_ = new SubscriberNode(&nh_);
   connect(this, SIGNAL(init()), p_subscriber_node_, SLOT(slotStartSubs()));
   p_subcriber_node_thread_ = new QThread();
@@ -35,8 +41,10 @@ MainWindow::MainWindow(QWidget *parent) :
   p_subscriber_node_->moveToThread(p_subcriber_node_thread_);
   connect(p_subscriber_node_, SIGNAL(sigMotorFb(float)), this, SLOT(slot_motorFb(float)));
   connect(p_subscriber_node_, SIGNAL(sigSensorFb(float)), this, SLOT(slot_sensorFb(float)));
+
   p_subcriber_node_thread_->start();
-  sleep(1);
+  p_publisher_node_thread_->start();
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
   emit init();
 }
 
@@ -68,5 +76,6 @@ void MainWindow::slot_sensorFb(float sig) {
 void MainWindow::on_sendCmdButton_clicked()
 {
   QString inputStr = ui->cmdLineEdit->text();
-  printStringTextBrowser(inputStr);
+  printStringTextBrowser("Command sent to motor. Value: " + inputStr + "\n");
+  emit sigSendCmd(inputStr.toFloat());
 }
