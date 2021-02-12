@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>631</width>
+    <width>1214</width>
     <height>488</height>
    </rect>
   </property>
@@ -37,7 +37,7 @@
    <widget class="QTextBrowser" name="textBrowser">
     <property name="geometry">
      <rect>
-      <x>320</x>
+      <x>890</x>
       <y>20</y>
       <width>291</width>
       <height>391</height>
@@ -55,21 +55,127 @@
     </property>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QLabel" name="cmdLabel">
+      <widget class="QLabel" name="cmd1Label">
        <property name="text">
         <string>Cmd</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="cmdLineEdit">
+      <widget class="QLineEdit" name="cmd1LineEdit">
        <property name="text">
         <string>0</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="sendCmdButton">
+      <widget class="QPushButton" name="sendCmd1Button">
+       <property name="text">
+        <string>Send</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="layoutWidget_2">
+    <property name="geometry">
+     <rect>
+      <x>310</x>
+      <y>20</y>
+      <width>268</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QLabel" name="cmd2Label">
+       <property name="text">
+        <string>Cmd</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="cmd2LineEdit">
+       <property name="text">
+        <string>0</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="sendCmd2Button">
+       <property name="text">
+        <string>Send</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QCustomPlot" name="sensorPlot2" native="true">
+    <property name="geometry">
+     <rect>
+      <x>310</x>
+      <y>240</y>
+      <width>271</width>
+      <height>171</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QCustomPlot" name="motorPlot2" native="true">
+    <property name="geometry">
+     <rect>
+      <x>310</x>
+      <y>60</y>
+      <width>271</width>
+      <height>171</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QCustomPlot" name="sensorPlot3" native="true">
+    <property name="geometry">
+     <rect>
+      <x>600</x>
+      <y>240</y>
+      <width>271</width>
+      <height>171</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QCustomPlot" name="motorPlot3" native="true">
+    <property name="geometry">
+     <rect>
+      <x>600</x>
+      <y>60</y>
+      <width>271</width>
+      <height>171</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QWidget" name="layoutWidget_3">
+    <property name="geometry">
+     <rect>
+      <x>600</x>
+      <y>20</y>
+      <width>268</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <item>
+      <widget class="QLabel" name="cmd3Label">
+       <property name="text">
+        <string>Cmd</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="cmd3LineEdit">
+       <property name="text">
+        <string>0</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="sendCmd3Button">
        <property name="text">
         <string>Send</string>
        </property>
@@ -83,7 +189,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>631</width>
+     <width>1214</width>
      <height>22</height>
     </rect>
    </property>

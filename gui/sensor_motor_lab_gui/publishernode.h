@@ -16,7 +16,7 @@ signals:
   void finished();
 
 public slots:
-  void slotPubCmd(float);
+  void slotPubCmd1(float);
 
 private:
   ros::NodeHandle *p_nh_;

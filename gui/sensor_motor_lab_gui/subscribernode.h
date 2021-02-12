@@ -21,16 +21,24 @@ public slots:
 signals:
   void finished();
   void sigStopped();
-  void sigMotorFb(float);
-  void sigSensorFb(float);
+  void sigMotor1Fb(float);
+  void sigSensor1Fb(float);
+  void sigMotor2Fb(float);
+  void sigSensor2Fb(float);
+  void sigMotor3Fb(float);
+  void sigSensor3Fb(float);
 
 private:
   ros::NodeHandle *p_nh_;
-  ros::Subscriber *motor_fb_sub_;
-  ros::Subscriber *sensor_fb_sub_;
+  ros::Subscriber *motor1_fb_sub_, *motor2_fb_sub_, *motor3_fb_sub_;
+  ros::Subscriber *sensor1_fb_sub_, *sensor2_fb_sub_, *sensor3_fb_sub_;
 
-  MotorFbMsg motor_fb_msg_;
-  SensorFbMsg sensor_fb_msg_;
+  MotorFbMsg motor1_fb_msg_, motor2_fb_msg_, motor3_fb_msg_;
+  SensorFbMsg sensor1_fb_msg_, sensor2_fb_msg_, sensor3_fb_msg_;
+
+  void setupSubscriber(ros::Subscriber *motor_fb_sub, ros::Subscriber *sensor_fb_sub,
+                       std::string motor_fb_topic, std::string sensor_fb_topic,
+                       MotorFbMsg &motorFbMsg, SensorFbMsg &sensorFbMsg);
 };
 
 #endif // SUBSCRIBERNODE_H

@@ -26,16 +26,17 @@ public:
 
 signals:
   void init();
-  void sigSendCmd(float);
-
-//public slots:
-//  void slotDisplayMotorFb(float);
-//  void slotDisplaySensorFb(float);
+  void sigSendCmd1(float);
 
 private slots:
-  void slot_motorFb(float);
-  void slot_sensorFb(float);
-  void on_sendCmdButton_clicked();
+  void slot_motor1Fb(float);
+  void slot_sensor1Fb(float);
+  void slot_motor2Fb(float);
+  void slot_sensor2Fb(float);
+  void slot_motor3Fb(float);
+  void slot_sensor3Fb(float);
+
+  void on_sendCmd1Button_clicked();
 
 private:
   Ui::MainWindow *ui;
@@ -48,11 +49,19 @@ private:
 
   const int plot_size_ = 100;
   const double plot_time_scale_ = 0.05;
-  QVector<double> motor_fb_plot_x_, motor_fb_plot_y_,
-                  sensor_fb_plot_x_, sensor_fb_plot_y_;
+  QVector<double> motor1_fb_plot_x_, motor1_fb_plot_y_,
+                  sensor1_fb_plot_x_, sensor1_fb_plot_y_,
+                  motor2_fb_plot_x_, motor2_fb_plot_y_,
+                  sensor2_fb_plot_x_, sensor2_fb_plot_y_,
+                  motor3_fb_plot_x_, motor3_fb_plot_y_,
+                  sensor3_fb_plot_x_, sensor3_fb_plot_y_;
+
+  QString textBrowserStr_;
+  std::chrono::time_point<std::chrono::system_clock> start_time_;
 
   void printStringTextBrowser(QString QStr);
   void setupPlot(QCustomPlot *plot, QVector<double> &plot_x, QVector<double> &plot_y, QString y_axis_str, int plot_size, double time_scale);
+  void drawPlot(QCustomPlot* plot, QVector<double> &plot_x, QVector<double> &plot_y, float sig);
 };
 
 #endif // MAINWINDOW_H

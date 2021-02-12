@@ -5,7 +5,7 @@ PublisherNode::PublisherNode(ros::NodeHandle *p_nh): p_nh_(p_nh) {
   *p_cmd_pub_ = p_nh_->advertise<std_msgs::Float32>("/motor_cmd", 10, true);
 }
 
-void PublisherNode::slotPubCmd(float cmd) {
+void PublisherNode::slotPubCmd1(float cmd) {
   cmd_msg_.data = cmd;
   p_cmd_pub_->publish(cmd_msg_);
 }
