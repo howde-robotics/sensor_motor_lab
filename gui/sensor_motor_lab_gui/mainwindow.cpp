@@ -8,24 +8,8 @@ MainWindow::MainWindow(QWidget *parent) :
   ui->setupUi(this);
 
   // Plotting
-  motor_fb_plot_x_ = QVector<double>(plot_size_, 0.0);
-  motor_fb_plot_y_ = QVector<double>(plot_size_, 0.0);
-  ui->motorPlot1->addGraph();
-  ui->motorPlot1->xAxis->setLabel("time");
-  ui->motorPlot1->yAxis->setLabel("motor position");
-  ui->motorPlot1->xAxis->setRange(0, plot_size_);
-  ui->motorPlot1->yAxis->setRange(0, plot_size_);
-  sensor_fb_plot_x_ = QVector<double>(plot_size_, 0.0);
-  sensor_fb_plot_y_ = QVector<double>(plot_size_, 0.0);
-  ui->sensorPlot1->addGraph();
-  ui->sensorPlot1->xAxis->setLabel("time");
-  ui->sensorPlot1->yAxis->setLabel("sensor position");
-  ui->sensorPlot1->xAxis->setRange(0, plot_size_);
-  ui->sensorPlot1->yAxis->setRange(0, plot_size_);
-  for (int i = 0; i < plot_size_; ++i) {
-    motor_fb_plot_x_[i] = i;
-    sensor_fb_plot_x_[i] = i;
-  }
+  setupPlot(ui->motorPlot1, motor_fb_plot_x_, motor_fb_plot_y_, "motor pos", plot_size_, plot_time_scale_);
+  setupPlot(ui->sensorPlot1, sensor_fb_plot_x_, sensor_fb_plot_y_, "sensor pos", plot_size_, plot_time_scale_);
 
   // ROS
   p_publisher_node_ = new PublisherNode(&nh_);
@@ -78,4 +62,17 @@ void MainWindow::on_sendCmdButton_clicked()
   QString inputStr = ui->cmdLineEdit->text();
   printStringTextBrowser("Command sent to motor. Value: " + inputStr + "\n");
   emit sigSendCmd(inputStr.toFloat());
+}
+
+void MainWindow::setupPlot(QCustomPlot *plot, QVector<double> &plot_x, QVector<double> &plot_y, QString y_axis_str, int plot_size, double time_scale) {
+  plot_x = QVector<double>(plot_size, 0.0);
+  plot_y = QVector<double>(plot_size, 0.0);
+  plot->addGraph();
+  plot->xAxis->setLabel("time (s)");
+  plot->yAxis->setLabel(y_axis_str);
+  plot->xAxis->setRange(0, plot_size * time_scale);
+  plot->yAxis->setRange(0, plot_size);
+  for (int i = 0; i < plot_size; ++i) {
+    plot_x[i] = i * time_scale;
+  }
 }
