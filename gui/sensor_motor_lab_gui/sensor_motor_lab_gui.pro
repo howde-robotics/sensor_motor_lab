@@ -8,10 +8,7 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
-INCLUDEPATH += /opt/ros/melodic/include \
-#               /usr/local/include/opencv \
-#              /usr/local/include/opencv2
-INCLUDEPATH += /includes
+INCLUDEPATH += /opt/ros/melodic/include
 
 LIBS += -L/opt/ros/melodic/lib -lroscpp -lroslib -lrosconsole -lroscpp_serialization -lrostime -lrviz
 

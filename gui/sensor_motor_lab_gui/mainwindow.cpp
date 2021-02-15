@@ -22,32 +22,23 @@ MainWindow::MainWindow(QWidget *parent) :
   connect(this, SIGNAL(sigSendCmd1(float)), p_publisher_node_, SLOT(slotPubCmd1(float)));
   connect(this, SIGNAL(sigSendCmd2(float)), p_publisher_node_, SLOT(slotPubCmd2(float)));
   connect(this, SIGNAL(sigSendCmd3(float)), p_publisher_node_, SLOT(slotPubCmd3(float)));
-  p_publisher_node_thread_ = new QThread();
-  connect(p_publisher_node_, SIGNAL(finished()), p_publisher_node_thread_, SLOT(quit()));
-  p_publisher_node_->moveToThread(p_publisher_node_thread_);
+  connect(p_publisher_node_, SIGNAL(finished()), &p_publisher_node_thread_, SLOT(quit()));
+  p_publisher_node_->moveToThread(&p_publisher_node_thread_);
 
   p_subscriber_node_ = new SubscriberNode(&nh_);
   connect(this, SIGNAL(init()), p_subscriber_node_, SLOT(slotStartSubs()));
-  p_subcriber_node_thread_ = new QThread();
-  connect(p_subscriber_node_, SIGNAL(finished()), p_subcriber_node_thread_, SLOT(quit()));
-  p_subscriber_node_->moveToThread(p_subcriber_node_thread_);
   connect(p_subscriber_node_, SIGNAL(sigMotor1Fb(float)), this, SLOT(slot_motor1Fb(float)));
   connect(p_subscriber_node_, SIGNAL(sigSensor1Fb(float)), this, SLOT(slot_sensor1Fb(float)));
   connect(p_subscriber_node_, SIGNAL(sigMotor2Fb(float)), this, SLOT(slot_motor2Fb(float)));
   connect(p_subscriber_node_, SIGNAL(sigSensor2Fb(float)), this, SLOT(slot_sensor2Fb(float)));
   connect(p_subscriber_node_, SIGNAL(sigMotor3Fb(float)), this, SLOT(slot_motor3Fb(float)));
   connect(p_subscriber_node_, SIGNAL(sigSensor3Fb(float)), this, SLOT(slot_sensor3Fb(float)));
+  connect(p_subscriber_node_, SIGNAL(finished()), &p_subcriber_node_thread_, SLOT(quit()));
+  p_subscriber_node_->moveToThread(&p_subcriber_node_thread_);
 
-
-  p_subcriber_node_thread_->start();
-  p_publisher_node_thread_->start();
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  p_subcriber_node_thread_.start();
+  p_publisher_node_thread_.start();
   emit init();
-}
-
-MainWindow::~MainWindow()
-{
-  delete ui;
 }
 
 void MainWindow::printStringTextBrowser(QString toPrintStr) {
@@ -79,30 +70,6 @@ void MainWindow::drawPlot(QCustomPlot* plot, QVector<double> &plot_x, QVector<do
   std::this_thread::sleep_for(std::chrono::milliseconds(5));
 }
 
-void MainWindow::slot_motor1Fb(float sig) {
-  drawPlot(ui->motorPlot1, motor1_fb_plot_x_, motor1_fb_plot_y_, sig);
-}
-
-void MainWindow::slot_sensor1Fb(float sig) {
-  drawPlot(ui->sensorPlot1, sensor1_fb_plot_y_, sensor1_fb_plot_y_, sig);
-}
-
-void MainWindow::slot_motor2Fb(float sig) {
-  drawPlot(ui->motorPlot2, motor2_fb_plot_x_, motor2_fb_plot_y_, sig);
-}
-
-void MainWindow::slot_sensor2Fb(float sig) {
-  drawPlot(ui->sensorPlot2, sensor2_fb_plot_x_, sensor2_fb_plot_y_, sig);
-}
-
-void MainWindow::slot_motor3Fb(float sig) {
-  drawPlot(ui->motorPlot3, motor3_fb_plot_x_, motor3_fb_plot_y_, sig);
-}
-
-void MainWindow::slot_sensor3Fb(float sig) {
-  drawPlot(ui->sensorPlot3, sensor3_fb_plot_x_, sensor3_fb_plot_y_, sig);
-}
-
 void MainWindow::processCmdButton(QLineEdit* line_edit, QString motor_id, void (MainWindow::* sig)(float)) {
   QString inputStr = line_edit->text();
   float input;
@@ -127,6 +94,30 @@ void MainWindow::processCmdButton(QLineEdit* line_edit, QString motor_id, void (
   emit (this->*sig)(input);
 }
 
+void MainWindow::slot_motor1Fb(float sig) {
+  drawPlot(ui->motorPlot1, motor1_fb_plot_x_, motor1_fb_plot_y_, sig);
+}
+
+void MainWindow::slot_sensor1Fb(float sig) {
+  drawPlot(ui->sensorPlot1, sensor1_fb_plot_y_, sensor1_fb_plot_y_, sig);
+}
+
+void MainWindow::slot_motor2Fb(float sig) {
+  drawPlot(ui->motorPlot2, motor2_fb_plot_x_, motor2_fb_plot_y_, sig);
+}
+
+void MainWindow::slot_sensor2Fb(float sig) {
+  drawPlot(ui->sensorPlot2, sensor2_fb_plot_x_, sensor2_fb_plot_y_, sig);
+}
+
+void MainWindow::slot_motor3Fb(float sig) {
+  drawPlot(ui->motorPlot3, motor3_fb_plot_x_, motor3_fb_plot_y_, sig);
+}
+
+void MainWindow::slot_sensor3Fb(float sig) {
+  drawPlot(ui->sensorPlot3, sensor3_fb_plot_x_, sensor3_fb_plot_y_, sig);
+}
+
 void MainWindow::on_sendCmd1Button_clicked()
 {
   processCmdButton(ui->cmd1LineEdit, "1", &MainWindow::sigSendCmd1);
@@ -140,4 +131,10 @@ void MainWindow::on_sendCmd2Button_clicked()
 void MainWindow::on_sendCmd3Button_clicked()
 {
   processCmdButton(ui->cmd3LineEdit, "3", &MainWindow::sigSendCmd3);
+}
+
+MainWindow::~MainWindow() {
+  delete ui;
+  delete p_publisher_node_;
+  delete p_subscriber_node_;
 }

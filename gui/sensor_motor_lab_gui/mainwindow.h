@@ -50,8 +50,8 @@ private:
   SubscriberNode *p_subscriber_node_;
   PublisherNode *p_publisher_node_;
 
-  QThread *p_subcriber_node_thread_;
-  QThread *p_publisher_node_thread_;
+  QThread p_subcriber_node_thread_;
+  QThread p_publisher_node_thread_;
 
   const int plot_size_ = 100;
   const double plot_time_scale_ = 0.05;
