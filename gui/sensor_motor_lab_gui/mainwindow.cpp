@@ -10,16 +10,18 @@ MainWindow::MainWindow(QWidget *parent) :
   start_time_ = std::chrono::system_clock::now();
 
   // Plotting
-  setupPlot(ui->motorPlot1, motor1_fb_plot_x_, motor1_fb_plot_y_, "motor1 pos", plot_size_, plot_time_scale_);
-  setupPlot(ui->sensorPlot1, sensor1_fb_plot_x_, sensor1_fb_plot_y_, "sensor1 pos", plot_size_, plot_time_scale_);
-  setupPlot(ui->motorPlot2, motor2_fb_plot_x_, motor2_fb_plot_y_, "motor2 pos", plot_size_, plot_time_scale_);
-  setupPlot(ui->sensorPlot2, sensor2_fb_plot_x_, sensor2_fb_plot_y_, "sensor2 pos", plot_size_, plot_time_scale_);
-  setupPlot(ui->motorPlot3, motor3_fb_plot_x_, motor3_fb_plot_y_, "motor3 pos", plot_size_, plot_time_scale_);
-  setupPlot(ui->sensorPlot3, sensor3_fb_plot_x_, sensor3_fb_plot_y_, "sensor3 pos", plot_size_, plot_time_scale_);
+  setupPlot(ui->motorPlot1, motor1_fb_plot_x_, motor1_fb_plot_y_, "motor1 pos", plot_size_, plot_time_scale_, x_scale_);
+  setupPlot(ui->sensorPlot1, sensor1_fb_plot_x_, sensor1_fb_plot_y_, "sensor1 pos", plot_size_, plot_time_scale_, x_scale_);
+  setupPlot(ui->motorPlot2, motor2_fb_plot_x_, motor2_fb_plot_y_, "motor2 pos", plot_size_, plot_time_scale_, x_scale_);
+  setupPlot(ui->sensorPlot2, sensor2_fb_plot_x_, sensor2_fb_plot_y_, "sensor2 pos", plot_size_, plot_time_scale_, x_scale_);
+  setupPlot(ui->motorPlot3, motor3_fb_plot_x_, motor3_fb_plot_y_, "motor3 pos", plot_size_, plot_time_scale_, x_scale_);
+  setupPlot(ui->sensorPlot3, sensor3_fb_plot_x_, sensor3_fb_plot_y_, "sensor3 pos", plot_size_, plot_time_scale_, x_scale_);
 
   // ROS
   p_publisher_node_ = new PublisherNode(&nh_);
   connect(this, SIGNAL(sigSendCmd1(float)), p_publisher_node_, SLOT(slotPubCmd1(float)));
+  connect(this, SIGNAL(sigSendCmd2(float)), p_publisher_node_, SLOT(slotPubCmd2(float)));
+  connect(this, SIGNAL(sigSendCmd3(float)), p_publisher_node_, SLOT(slotPubCmd3(float)));
   p_publisher_node_thread_ = new QThread();
   connect(p_publisher_node_, SIGNAL(finished()), p_publisher_node_thread_, SLOT(quit()));
   p_publisher_node_->moveToThread(p_publisher_node_thread_);
@@ -48,18 +50,22 @@ MainWindow::~MainWindow()
   delete ui;
 }
 
-void MainWindow::printStringTextBrowser(QString QStr) {
-  ui->textBrowser->setText(QStr);
+void MainWindow::printStringTextBrowser(QString toPrintStr) {
+  if (textBrowserStr_.size() > maxTextBrowserSize_) {
+    textBrowserStr_.resize(maxTextBrowserSize_);
+  }
+  textBrowserStr_ = toPrintStr + textBrowserStr_;
+  ui->textBrowser->setText(textBrowserStr_);
 }
 
-void MainWindow::setupPlot(QCustomPlot *plot, QVector<double> &plot_x, QVector<double> &plot_y, QString y_axis_str, int plot_size, double time_scale) {
+void MainWindow::setupPlot(QCustomPlot *plot, QVector<double> &plot_x, QVector<double> &plot_y, QString y_axis_str, int plot_size, double time_scale, double x_scale) {
   plot_x = QVector<double>(plot_size, 0.0);
   plot_y = QVector<double>(plot_size, 0.0);
   plot->addGraph();
   plot->xAxis->setLabel("time (s)");
   plot->yAxis->setLabel(y_axis_str);
   plot->xAxis->setRange(0, plot_size * time_scale);
-  plot->yAxis->setRange(0, plot_size);
+  plot->yAxis->setRange(0, plot_size * x_scale);
   for (int i = 0; i < plot_size; ++i) {
     plot_x[i] = i * time_scale;
   }
@@ -97,12 +103,41 @@ void MainWindow::slot_sensor3Fb(float sig) {
   drawPlot(ui->sensorPlot3, sensor3_fb_plot_x_, sensor3_fb_plot_y_, sig);
 }
 
+void MainWindow::processCmdButton(QLineEdit* line_edit, QString motor_id, void (MainWindow::* sig)(float)) {
+  QString inputStr = line_edit->text();
+  float input;
+  QString timeStr = QString::number((std::chrono::system_clock::now() - start_time_).count());
+
+  bool conversion_ok;
+  input = inputStr.toFloat(&conversion_ok);
+  if (!conversion_ok) {
+    QString errorStr = "[" + timeStr + "]: Error, not a number\n";
+    printStringTextBrowser(errorStr);
+    return;
+  }
+
+  if (input < 0.0 || input > 1.0) {
+    QString errorStr = "[" + timeStr + "]: Value out of bound, insert number within 0 and 1\n";
+    printStringTextBrowser(errorStr);
+    return;
+  }
+
+  QString toPrintStr = "[" + timeStr + "]: Command sent to motor " + motor_id + " with value: " + inputStr + "\n";
+  printStringTextBrowser(toPrintStr);
+  emit (this->*sig)(input);
+}
+
 void MainWindow::on_sendCmd1Button_clicked()
 {
-  QString inputStr = ui->cmd1LineEdit->text();
-  QString timeStr = QString::number((std::chrono::system_clock::now() - start_time_).count());
-  QString toPrintStr = "[" + timeStr + "]: Command sent to motor 1 with Value: " + inputStr + "\n";
-  textBrowserStr_ = toPrintStr + textBrowserStr_;
-  printStringTextBrowser(textBrowserStr_);
-  emit sigSendCmd1(inputStr.toFloat());
+  processCmdButton(ui->cmd1LineEdit, "1", &MainWindow::sigSendCmd1);
+}
+
+void MainWindow::on_sendCmd2Button_clicked()
+{
+  processCmdButton(ui->cmd2LineEdit, "2", &MainWindow::sigSendCmd2);
+}
+
+void MainWindow::on_sendCmd3Button_clicked()
+{
+  processCmdButton(ui->cmd3LineEdit, "3", &MainWindow::sigSendCmd3);
 }

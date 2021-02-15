@@ -17,10 +17,12 @@ signals:
 
 public slots:
   void slotPubCmd1(float);
+  void slotPubCmd2(float);
+  void slotPubCmd3(float);
 
 private:
   ros::NodeHandle *p_nh_;
-  ros::Publisher *p_cmd_pub_;
+  ros::Publisher *p_cmd1_pub_, *p_cmd2_pub_, *p_cmd3_pub_;
 
   std_msgs::Float32 cmd_msg_;
 };
