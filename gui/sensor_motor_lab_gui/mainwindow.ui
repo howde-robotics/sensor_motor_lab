@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1214</width>
-    <height>488</height>
+    <height>524</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,7 +18,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>60</y>
+      <y>90</y>
       <width>271</width>
       <height>171</height>
      </rect>
@@ -28,7 +28,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>240</y>
+      <y>270</y>
       <width>271</width>
       <height>171</height>
      </rect>
@@ -38,7 +38,7 @@
     <property name="geometry">
      <rect>
       <x>890</x>
-      <y>20</y>
+      <y>50</y>
       <width>291</width>
       <height>391</height>
      </rect>
@@ -48,7 +48,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>20</y>
+      <y>50</y>
       <width>268</width>
       <height>27</height>
      </rect>
@@ -81,7 +81,7 @@
     <property name="geometry">
      <rect>
       <x>310</x>
-      <y>20</y>
+      <y>50</y>
       <width>268</width>
       <height>27</height>
      </rect>
@@ -114,7 +114,7 @@
     <property name="geometry">
      <rect>
       <x>310</x>
-      <y>240</y>
+      <y>270</y>
       <width>271</width>
       <height>171</height>
      </rect>
@@ -124,7 +124,7 @@
     <property name="geometry">
      <rect>
       <x>310</x>
-      <y>60</y>
+      <y>90</y>
       <width>271</width>
       <height>171</height>
      </rect>
@@ -134,7 +134,7 @@
     <property name="geometry">
      <rect>
       <x>600</x>
-      <y>240</y>
+      <y>270</y>
       <width>271</width>
       <height>171</height>
      </rect>
@@ -144,7 +144,7 @@
     <property name="geometry">
      <rect>
       <x>600</x>
-      <y>60</y>
+      <y>90</y>
       <width>271</width>
       <height>171</height>
      </rect>
@@ -154,7 +154,7 @@
     <property name="geometry">
      <rect>
       <x>600</x>
-      <y>20</y>
+      <y>50</y>
       <width>268</width>
       <height>27</height>
      </rect>
@@ -182,6 +182,48 @@
       </widget>
      </item>
     </layout>
+   </widget>
+   <widget class="QRadioButton" name="motor1RadioButton">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>10</y>
+      <width>112</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Motor1</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="motor2RadioButton">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>10</y>
+      <width>112</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Motor2</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="motor3RadioButton">
+    <property name="geometry">
+     <rect>
+      <x>280</x>
+      <y>10</y>
+      <width>112</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Motor3</string>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
