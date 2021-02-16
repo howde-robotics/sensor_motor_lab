@@ -1,41 +1,57 @@
 #include <ros.h>
 #include <std_msgs/Float32.h>
+#include <std_msgs/Int8.h>
 
 ros::NodeHandle nh;
+
+struct abstractMotorSensorPair {
+  virtual void setup() = 0;
+  virtual void run() = 0;//single loop of read the sensor and set the motor
+  
+  virtual float motorFeedback() = 0;//returns motor state 0 to 1
+  virtual float sensorFeedback() = 0;//return sensor state 0 to 1
+
+  virtual void processGuiCommand(float cmd) = 0;
+};
 
 class SensorMotorLab {
 public:
   SensorMotorLab() :
-  motor1_cmd_sub("motor1_cmd", &SensorMotorLab::motor1_cmd_cb, this),
-  motor2_cmd_sub("motor2_cmd", &SensorMotorLab::motor2_cmd_cb, this),
-  motor3_cmd_sub("motor3_cmd", &SensorMotorLab::motor3_cmd_cb, this),
-  motor1_fb_pub("motor1_fb", &motor1_fb_msg),
-  sensor1_fb_pub("sensor1_fb", &sensor1_fb_msg),
-  motor2_fb_pub("motor2_fb", &motor2_fb_msg),
-  sensor2_fb_pub("sensor2_fb", &sensor2_fb_msg),
-  motor3_fb_pub("motor3_fb", &motor3_fb_msg),
-  sensor3_fb_pub("sensor3_fb", &sensor3_fb_msg)
+  motor_cmd_sub("motor_cmd", &SensorMotorLab::motor1_cmd_cb, this),
+  motor_selection_sub("motor_selection", &SensorMotorLab::motor_selection_cb, this),
+  motor_fb_pub("motor_fb", &motor_fb_msg),
+  sensor_fb_pub("sensor_fb", &sensor_fb_msg)
   {}
 
   void init(ros::NodeHandle& nh) {
-    nh.advertise(motor1_fb_pub);
-    nh.advertise(sensor1_fb_pub);
-    nh.advertise(motor2_fb_pub);
-    nh.advertise(sensor2_fb_pub);
-    nh.advertise(motor3_fb_pub);
-    nh.advertise(sensor3_fb_pub);
+    flexStepperObj.setup();
+    
+    nh.advertise(motor_fb_pub);
+    nh.advertise(sensor_fb_pub);
   
-    nh.subscribe(motor1_cmd_sub);
-    nh.subscribe(motor1_cmd_sub);
-    nh.subscribe(motor1_cmd_sub);
+    nh.subscribe(motor_cmd_sub);
   }
 
   void run() {
-    
+    switch (curr_motor) {
+      case motorSelection::motor1:
+        flexStepperObj.run();
+        motor_fb_msg.data = flexStepperObj.motorFeedback();
+        sensor_fb_msg.data = flexStepperObj.sensorFeedback();
+        motor_fb_pub.publish(&motor_fb_msg);
+        sensor_fb_pub.publish(&sensor_fb_msg);
+        break;
+      case motorSelection::motor2:
+        // do smth
+        break;
+      case motorSelection::motor3:
+        // do smth
+        break;
+    }
   }
 
   void motor1_cmd_cb(const std_msgs::Float32& msg) {
-  
+    flexStepperObj.processGuiCommand(msg.data);
   }
   
   void motor2_cmd_cb(const std_msgs::Float32& msg) {
@@ -45,27 +61,36 @@ public:
   void motor3_cmd_cb(const std_msgs::Float32& msg) {
     
   }
+
+  void motor_selection_cb(const std_msgs::Int8& msg) {
+    curr_motor = msg.data;
+  }
+
+
 private:
-  std_msgs::Float32 motor1_fb_msg, sensor1_fb_msg,
-                    motor2_fb_msg, sensor2_fb_msg,
-                    motor3_fb_msg, sensor3_fb_msg;
+  std_msgs::Float32 motor_fb_msg, sensor_fb_msg;
 
-  ros::Publisher motor1_fb_pub;
-  ros::Publisher sensor1_fb_pub;
-  ros::Publisher motor2_fb_pub;
-  ros::Publisher sensor2_fb_pub;
-  ros::Publisher motor3_fb_pub;
-  ros::Publisher sensor3_fb_pub;
+  enum motorSelection {
+    motor1,
+    motor2,
+    motor3
+  };
 
-  ros::Subscriber<std_msgs::Float32, SensorMotorLab> motor1_cmd_sub;
-  ros::Subscriber<std_msgs::Float32, SensorMotorLab> motor2_cmd_sub;
-  ros::Subscriber<std_msgs::Float32, SensorMotorLab> motor3_cmd_sub;
+  short int curr_motor = motorSelection::motor1;
+
+  ros::Publisher motor_fb_pub;
+  ros::Publisher sensor_fb_pub;
+
+  ros::Subscriber<std_msgs::Float32, SensorMotorLab> motor_cmd_sub;
+  ros::Subscriber<std_msgs::Int8, SensorMotorLab> motor_selection_sub;
+
+  flexStepperPair flexStepperObj;
 };
+
 
 SensorMotorLab node;
 
 void setup() {
-  Serial.begin(9600);
   nh.initNode();
   node.init(nh);
 }
