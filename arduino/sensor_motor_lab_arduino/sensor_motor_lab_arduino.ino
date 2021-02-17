@@ -11,7 +11,7 @@
 #define STEPPERDIRPIN 2 //pin out for stepper direction command
 
 ros::NodeHandle nh;
-
+ 
 struct abstractMotorSensorPair {
   virtual void setup() = 0; // single setup function when switching between motors
   virtual void run() = 0; // single loop of read the sensor and set the motor
