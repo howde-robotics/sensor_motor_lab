@@ -5,7 +5,7 @@ struct abstractMotorSensorPair {
   virtual float motorFeedback() = 0;//returns motor state 0 to 1
   virtual float sensorFeedback() = 0;//return sensor state 0 to 1
 
-  virtual void processGuiCommand(int cmd) = 0;
+  virtual void processGuiCommand(float cmd) = 0;
 };
 
 
@@ -34,7 +34,7 @@ struct flexStepperPair : abstractMotorSensorPair {
     pinMode(dirPin, OUTPUT);
   }
 
-  void processGuiCommand(int command){
+  void processGuiCommand(float command){
     //no commands atm
   }
 
