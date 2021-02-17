@@ -68,6 +68,8 @@ struct lightServoPair : abstractMotorSensorPair {
     }
   
     timer = millis();
+
+  }
   
 };
 
