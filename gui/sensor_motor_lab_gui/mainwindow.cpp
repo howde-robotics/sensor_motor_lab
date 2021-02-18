@@ -10,8 +10,8 @@ MainWindow::MainWindow(QWidget *parent) :
   start_time_ = std::chrono::system_clock::now();
 
   // Plotting
-  setupPlot(ui->motorPlot1, motor1_fb_plot_x_, motor1_fb_plot_y_, "motor1 pos", plot_size_, plot_time_scale_, y_scale_);
-  setupPlot(ui->sensorPlot1, sensor1_fb_plot_x_, sensor1_fb_plot_y_, "sensor1 pos", plot_size_, plot_time_scale_, y_scale_);
+  setupPlot(ui->motorPlot1, motor1_fb_plot_x_, motor1_fb_plot_y_, "motor angle (deg)", plot_size_, plot_time_scale_, 180);
+  setupPlot(ui->sensorPlot1, sensor1_fb_plot_x_, sensor1_fb_plot_y_, "flex angle (deg)", plot_size_, plot_time_scale_, 180);
 
   // ROS
   p_publisher_node_ = new PublisherNode(&nh_);
@@ -47,8 +47,8 @@ void MainWindow::setupPlot(QCustomPlot *plot, QVector<double> &plot_x, QVector<d
   plot->addGraph();
   plot->xAxis->setLabel("time (s)");
   plot->yAxis->setLabel(y_axis_str);
-  plot->xAxis->setRange(0, plot_size * time_scale);
-  plot->yAxis->setRange(0, plot_size * y_scale);
+  plot->xAxis->setRange(0, time_scale);
+  plot->yAxis->setRange(0, y_scale);
   for (int i = 0; i < plot_size; ++i) {
     plot_x[i] = i * time_scale;
   }
@@ -62,7 +62,7 @@ void MainWindow::drawPlot(QCustomPlot* plot, QVector<double> &plot_x, QVector<do
   std::this_thread::sleep_for(std::chrono::milliseconds(5));
 }
 
-void MainWindow::processCmdButton(QLineEdit* line_edit, QString motor_id, void (MainWindow::* sig)(float)) {
+void MainWindow::processCmdButton(QLineEdit* line_edit, QString motor_id, void (MainWindow::* sig)(float), float min_input, float max_input) {
   QString inputStr = line_edit->text();
   float input;
   QString timeStr = QString::number((std::chrono::system_clock::now() - start_time_).count());
@@ -75,8 +75,8 @@ void MainWindow::processCmdButton(QLineEdit* line_edit, QString motor_id, void (
     return;
   }
 
-  if (input < 0.0 || input > 1.0) {
-    QString errorStr = "[" + timeStr + "]: Value out of bound, insert number within 0 and 1\n";
+  if (input < min_input || input > max_input) {
+    QString errorStr = "[" + timeStr + "]: Value out of bound, insert number within" + QString::number(min_input) + "-" + QString::number(max_input) + "\n";
     printStringTextBrowser(errorStr);
     return;
   }
@@ -95,16 +95,16 @@ void MainWindow::processRadioButton(QString motor_selection_str, int motor_selec
 
   switch (motor_selection) {
     case motorSelection::motor1:
-      setupPlot(ui->motorPlot1, motor1_fb_plot_x_, motor1_fb_plot_y_, "motor1 pos", plot_size_, plot_time_scale_, 0.01);
-      setupPlot(ui->sensorPlot1, sensor1_fb_plot_x_, sensor1_fb_plot_y_, "sensor1 pos", plot_size_, plot_time_scale_, 0.01);
+      setupPlot(ui->motorPlot1, motor1_fb_plot_x_, motor1_fb_plot_y_, "motor angle (deg)", plot_size_, plot_time_scale_, 180);
+      setupPlot(ui->sensorPlot1, sensor1_fb_plot_x_, sensor1_fb_plot_y_, "flex angle (deg)", plot_size_, plot_time_scale_, 180);
       break;
     case motorSelection::motor2:
-      setupPlot(ui->motorPlot1, motor1_fb_plot_x_, motor1_fb_plot_y_, "motor2 pos", plot_size_, plot_time_scale_, 0.1);
-      setupPlot(ui->sensorPlot1, sensor1_fb_plot_x_, sensor1_fb_plot_y_, "sensor2 pos", plot_size_, plot_time_scale_, 0.1);
+      setupPlot(ui->motorPlot1, motor1_fb_plot_x_, motor1_fb_plot_y_, "motor angle (deg)", plot_size_, plot_time_scale_, 180);
+      setupPlot(ui->sensorPlot1, sensor1_fb_plot_x_, sensor1_fb_plot_y_, "brightness (lux)", plot_size_, plot_time_scale_, 1024);
       break;
     case motorSelection::motor3:
-      setupPlot(ui->motorPlot1, motor1_fb_plot_x_, motor1_fb_plot_y_, "motor3 pos", plot_size_, plot_time_scale_, 1);
-      setupPlot(ui->sensorPlot1, sensor1_fb_plot_x_, sensor1_fb_plot_y_, "sensor3 pos", plot_size_, plot_time_scale_, 1);
+      setupPlot(ui->motorPlot1, motor1_fb_plot_x_, motor1_fb_plot_y_, "motor pos (ticks)", plot_size_, plot_time_scale_, 650);
+      setupPlot(ui->sensorPlot1, sensor1_fb_plot_x_, sensor1_fb_plot_y_, "force sensor (gram)", plot_size_, plot_time_scale_, 100);
       break;
   }
 }
@@ -120,7 +120,17 @@ void MainWindow::slot_sensor1Fb(float sig) {
 
 void MainWindow::on_sendCmd1Button_clicked()
 {
-  processCmdButton(ui->cmd1LineEdit, QString::number(curr_motor_selection+1), &MainWindow::sigSendCmd1);
+  switch (curr_motor_selection) {
+    case motorSelection::motor1:
+      processCmdButton(ui->cmd1LineEdit, QString::number(curr_motor_selection+1), &MainWindow::sigSendCmd1, 0.0, 2.0);
+      break;
+    case motorSelection::motor2:
+      processCmdButton(ui->cmd1LineEdit, QString::number(curr_motor_selection+1), &MainWindow::sigSendCmd1, 0.0, 1.0);
+      break;
+    case motorSelection::motor3:
+      processCmdButton(ui->cmd1LineEdit, QString::number(curr_motor_selection+1), &MainWindow::sigSendCmd1, 0.0, 1.0);
+      break;
+  }
 }
 
 void MainWindow::on_motor1RadioButton_clicked()
