@@ -33,7 +33,7 @@ struct forceResitiveSensorDCPair : abstractMotorSensorPair {
   long rotorPosition; // current encoder reading
   float revsPerMin; // revolutions per minute
   float frsV; // force resistive sensor voltage
-  float frsR; // force resistive sensor resistor
+  float frsR; // force resistive sensor resistance
   float appliedForce; // force applied to the sensor
   float sensorOutput; // output of sensor in grams
   float motorOutput; // motor output either position or RPM
@@ -43,9 +43,9 @@ struct forceResitiveSensorDCPair : abstractMotorSensorPair {
   float desiredPosition; 
   float desiredRPM; 
   float motorInputSignal; 
-  float propGain; 
-  float derivGain;
-  float integralGain; 
+  float propGain=0; 
+  float derivGain=0;
+  float integralGain=0; 
   float errLastTimeStep;
   float errorAccumulation;
   Encoder * encoder; // main encoder object
@@ -79,14 +79,18 @@ struct forceResitiveSensorDCPair : abstractMotorSensorPair {
     float errdot = (err - errLastTimeStep);
     errorAccumulation += err;
 
-    propGain = 1.0;
-    derivGain = 1.0;
-    integralGain = 0.0;
-
     motorInputSignal = propGain*err + derivGain*errdot + integralGain*errorAccumulation;
 
     sendInputToMotor(motorInputSignal);
     errLastTimeStep = err;
+  }
+
+  void setMotionGains(float Kp, float  Kd, float Ki, float positionDes, float speedDes){
+    propGain = Kp;
+    derivGain = Kd;
+    integralGain = Ki;
+    desiredPosition = positionDes;
+    desiredRPM = speedDes;
   }
   
   // feedback for motor, can return speed or position
@@ -171,6 +175,7 @@ forceResitiveSensorDCPair frs;
 void setup() {
   Serial.begin(9600);
   frs.setup();
+  frs.setMotionGains(1, 1, 0, 90, 40);
 
 }
 
