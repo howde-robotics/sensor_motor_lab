@@ -27,13 +27,10 @@ struct forceResitiveSensorDCPair : abstractMotorSensorPair {
   
   // calculation numbers
   bool returnPosition = true;
-  int frsADC; // the raw analog to digital converter reading
-  int timePerRev = 0; // time elapsed between revolutions
+  int timePerRev = 0; // time elapsed between encoder revolutions
   int curTime; // current time since arduino activation
   long rotorPosition; // current encoder reading
   float revsPerMin; // revolutions per minute
-  float frsV; // force resistive sensor voltage
-  float frsR; // force resistive sensor resistance
   float appliedForce; // force applied to the sensor
   float sensorOutput; // output of sensor in grams
   float motorOutput; // motor output either position or RPM
@@ -95,8 +92,10 @@ struct forceResitiveSensorDCPair : abstractMotorSensorPair {
   
   // feedback for motor, can return speed or position
   float motorFeedback(){
+    calculatePosVel();
+    
     if (returnPosition){
-      return calculatePosVel();
+      return rotorPosition;
     }
     else {
       return revsPerMin;
@@ -106,7 +105,8 @@ struct forceResitiveSensorDCPair : abstractMotorSensorPair {
 
   // feedback from sensor
   float sensorFeedback(){
-    return calculateForce();
+    calculateForce();
+    return appliedForce;
   }
 
   void processGuiCommand(float cmd){
@@ -114,7 +114,11 @@ struct forceResitiveSensorDCPair : abstractMotorSensorPair {
   }
 
   // calculate force from the sensor
-  float calculateForce(){
+  void calculateForce(){
+    int frsADC; // the raw analog to digital converter reading
+    float frsV; // force resistive sensor voltage
+    float frsR; // force resistive sensor resistance  
+    
     // read the analog input
     frsADC = analogRead(FSR_PIN);
 
@@ -136,11 +140,10 @@ struct forceResitiveSensorDCPair : abstractMotorSensorPair {
         appliedForce = 1200 * (frsV - 2.5);
       }
     }
-    return appliedForce;
   }
 
   // calculate motor position and velocity
-  long calculatePosVel(){
+  void calculatePosVel(){
     rotorPosition = encoder->read();
     if (rotorPosition >= MS_PER_REV){
       encoder->write(0);
@@ -148,8 +151,6 @@ struct forceResitiveSensorDCPair : abstractMotorSensorPair {
       curTime = millis();
       revsPerMin = 1 / (timePerRev / (1000.0 * 60));
     }
-
-    return rotorPosition;
   }
 
   void sendInputToMotor(float input){
