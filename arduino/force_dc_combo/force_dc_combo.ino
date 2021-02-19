@@ -119,8 +119,8 @@ struct forceResitiveSensorDCPair : abstractMotorSensorPair {
     frsADC = analogRead(FSR_PIN);
 
     if (frsADC != 0){
-      float frsV = frsADC * VCC / 1023.0; // calculate voltage from raw analog input
-      float frsR = R_DIV * (VCC / frsV - 1.0); // calculate resistance
+      frsV = frsADC * VCC / 1023.0; // calculate voltage from raw analog input
+      frsR = R_DIV * (VCC / frsV - 1.0); // calculate resistance
 
       // this sensor graph is logarithmic so I'm breaking it up into several sections
       if (frsV <= 1 && frsV > 0)
