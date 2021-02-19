@@ -1,5 +1,7 @@
 #include <Encoder.h>
 
+
+
 struct abstractMotorSensorPair {
   virtual void setup() = 0;
   virtual void run() = 0;//single loop of read the sensor and set the motor
@@ -22,7 +24,8 @@ struct forceResitiveSensorDCPair : abstractMotorSensorPair {
   const int MS_PER_REV = 674;
   const float VCC = 4.98; // supply voltage
   const float R_DIV = 10000; // resistance in voltage divider
-
+  enum Direction{FORWARD, BACKWARD};
+  
   // calculation numbers
   bool returnPosition = true;
   int frsADC; // the raw analog to digital converter reading
@@ -33,6 +36,16 @@ struct forceResitiveSensorDCPair : abstractMotorSensorPair {
   float frsV; // force resistive sensor voltage
   float frsR; // force resistive sensor resistor
   float appliedForce; // force applied to the sensor
+  float sensorOutput;
+  float motorOutput;
+  // PID parameters
+  float desiredSpeed;
+  float desiredPosition; 
+  float motorInput;
+  float Kp;
+  float Kd;
+  float Ki;
+  float errorAccumulation;
   Encoder * encoder; // main encoder object
   
   void setup(){
@@ -48,14 +61,18 @@ struct forceResitiveSensorDCPair : abstractMotorSensorPair {
 
   // main running function
   void run(){
+    motorOutput = motorFeedback();
+    sensorOutput = sensorFeedback();
+
+
+    sendSpeedToMotor(motorInput, FORWARD);
     
   }
   
-  // feedback for motor
+  // feedback for motor, can return speed or position
   float motorFeedback(){
-    rotorPosition = calculatePosVel(encoder);
     if (returnPosition){
-      return rotorPosition;
+      return calculatePosVel(encoder);
     }
     else {
       return revsPerMin;
@@ -109,6 +126,22 @@ struct forceResitiveSensorDCPair : abstractMotorSensorPair {
     }
 
     return rotorPosition;
+  }
+
+  void sendSpeedToMotor(float speed, int dir){
+
+    // input to PWM range 0-255
+    int inputSpeed = (int) speed/255;
+
+    // set spin direction
+    if (dir == FORWARD){
+      analogWrite(I1_PIN, inputSpeed);
+      digitalWrite(I2_PIN, LOW);
+    }
+    if (dir == BACKWARD){
+      digitalWrite(I1_PIN, LOW);
+      analogWrite(I2_PIN, inputSpeed);
+    }
   }
   
 };
