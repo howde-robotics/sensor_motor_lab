@@ -96,7 +96,7 @@ struct forceResitiveSensorDCPair : abstractMotorSensorPair {
   // feedback for motor, can return speed or position
   float motorFeedback(){
     if (returnPosition){
-      return calculatePosVel(encoder);
+      return calculatePosVel();
     }
     else {
       return revsPerMin;
@@ -140,7 +140,7 @@ struct forceResitiveSensorDCPair : abstractMotorSensorPair {
   }
 
   // calculate motor position and velocity
-  long calculatePosVel(Encoder * encoder){
+  long calculatePosVel(){
     rotorPosition = encoder->read();
     if (rotorPosition >= MS_PER_REV){
       encoder->write(0);
