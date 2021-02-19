@@ -48,8 +48,7 @@ private:
   QThread p_publisher_node_thread_;
 
   const int plot_size_ = 100;
-  const double plot_time_scale_ = 0.05;
-  const double y_scale_ = 0.01;
+  const double plot_time_scale_ = 5;
   QVector<double> motor1_fb_plot_x_, motor1_fb_plot_y_,
                   sensor1_fb_plot_x_, sensor1_fb_plot_y_;
 
@@ -67,7 +66,7 @@ private:
   void printStringTextBrowser(QString QStr);
   static void setupPlot(QCustomPlot *plot, QVector<double> &plot_x, QVector<double> &plot_y, QString y_axis_str, int plot_size, double time_scale, double y_scale);
   static void drawPlot(QCustomPlot* plot, QVector<double> &plot_x, QVector<double> &plot_y, float sig);
-  void processCmdButton(QLineEdit* line_edit, QString motor_id, void (MainWindow::* signal)(float));
+  void processCmdButton(QLineEdit* line_edit, QString motor_id, void (MainWindow::* signal)(float), float min_input, float max_input);
   void processRadioButton(QString motor_selection_str, int motor_selection, void (MainWindow:: *signal)(int));
 };
 

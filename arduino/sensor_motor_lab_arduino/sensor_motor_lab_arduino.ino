@@ -9,6 +9,7 @@
 #define FLEXSENSORPIN A0 //Pin in for flex meter signal
 #define STEPPERPIN 3  //pin out for stepper step command
 #define STEPPERDIRPIN 2 //pin out for stepper direction command
+#define BUTTONPIN 4  // pin in for button
 
 ros::NodeHandle nh;
  
@@ -120,8 +121,7 @@ struct flexStepperPair : abstractMotorSensorPair {
     int flexIn = analogRead(FLEXSENSORPIN);
     float flexV = flexIn * vcc / 1023.0;
     float flexR = rDiv * (vcc / flexV - 1.0);
-    sensorState = map(flexR, rStraight, rBend,
-                     0, 90.0);
+    sensorState = map(flexR, rStraight, rBend, 0, 90.0);
 
     avFlexAngle = (emaAlpha * sensorState) + (1.0 - emaAlpha) * avFlexAngle;
 
@@ -167,23 +167,70 @@ public:
   void run() {
     switch (curr_motor) {
       case motorSelection::motor1:
-        flexStepperObj.run();
-        motor_fb_msg.data = flexStepperObj.motorFeedback();
-        sensor_fb_msg.data = flexStepperObj.sensorFeedback();
-        motor_fb_pub.publish(&motor_fb_msg);
-        sensor_fb_pub.publish(&sensor_fb_msg);
+        sensorMotorPairRun(flexStepperObj);
         break;
       case motorSelection::motor2:
-        lightServoObj.run();
-        motor_fb_msg.data = lightServoObj.motorFeedback();
-        sensor_fb_msg.data = lightServoObj.sensorFeedback();
-        motor_fb_pub.publish(&motor_fb_msg);
-        sensor_fb_pub.publish(&sensor_fb_msg);
+        sensorMotorPairRun(lightServoObj);
         break;
       case motorSelection::motor3:
         // do smth
         break;
     }
+    motor_fb_pub.publish(&motor_fb_msg);
+    sensor_fb_pub.publish(&sensor_fb_msg);
+
+    if (readButtonWithDebounce(BUTTONPIN, &buttonState, &prevButtonState, &lastDebounceTime)) {
+      // do smth
+    }
+  }
+
+private:
+  std_msgs::Float32 motor_fb_msg, sensor_fb_msg;
+
+  enum motorSelection {
+    motor1,
+    motor2,
+    motor3
+  };
+
+  short int curr_motor = motorSelection::motor1;
+
+  ros::Publisher motor_fb_pub;
+  ros::Publisher sensor_fb_pub;
+
+  ros::Subscriber<std_msgs::Float32, SensorMotorLab> motor_cmd_sub;
+  ros::Subscriber<std_msgs::Int8, SensorMotorLab> motor_selection_sub;
+
+  flexStepperPair flexStepperObj;
+  lightServoPair lightServoObj;
+
+  int buttonState, prevButtonState = LOW;
+  unsigned long lastDebounceTime = 0;
+  
+  bool readButtonWithDebounce(const int BUTTON_PIN, int *buttonState, int *lastButtonState, unsigned long *lastDebounceTime) {
+    bool output = false;
+    
+    int reading = digitalRead(BUTTON_PIN);
+  
+    if (reading != *lastButtonState)
+    {
+      *lastDebounceTime = millis();
+    }
+  
+    if ((millis() - *lastDebounceTime) > 50)  // 50 ms debounce delay 
+    {
+      if (reading != *buttonState) 
+      {
+        *buttonState = reading;
+        if (*buttonState == HIGH) 
+        {
+          output = true;
+        }
+      }
+    }
+  
+    *lastButtonState = reading;
+    return output;
   }
 
   void motor_cmd_cb(const std_msgs::Float32& msg) {
@@ -205,28 +252,13 @@ public:
     }
   }
 
-
-private:
-  std_msgs::Float32 motor_fb_msg, sensor_fb_msg;
-
-  enum motorSelection {
-    motor1,
-    motor2,
-    motor3
-  };
-
-  short int curr_motor = motorSelection::motor1;
-
-  ros::Publisher motor_fb_pub;
-  ros::Publisher sensor_fb_pub;
-
-  ros::Subscriber<std_msgs::Float32, SensorMotorLab> motor_cmd_sub;
-  ros::Subscriber<std_msgs::Int8, SensorMotorLab> motor_selection_sub;
-
-  flexStepperPair flexStepperObj;
-  lightServoPair lightServoObj;
+  template <class T>
+  void sensorMotorPairRun(T obj) {
+    obj.run();
+    motor_fb_msg.data = obj.motorFeedback();
+    sensor_fb_msg.data = obj.sensorFeedback();
+  }
 };
-
 
 SensorMotorLab node;
 
