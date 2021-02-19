@@ -24,7 +24,6 @@ struct forceResitiveSensorDCPair : abstractMotorSensorPair {
   const int MS_PER_REV = 674;
   const float VCC = 4.98; // supply voltage
   const float R_DIV = 10000; // resistance in voltage divider
-  enum Direction{FORWARD, BACKWARD};
   
   // calculation numbers
   bool returnPosition = true;
@@ -36,15 +35,18 @@ struct forceResitiveSensorDCPair : abstractMotorSensorPair {
   float frsV; // force resistive sensor voltage
   float frsR; // force resistive sensor resistor
   float appliedForce; // force applied to the sensor
-  float sensorOutput;
-  float motorOutput;
+  float sensorOutput; // output of sensor in grams
+  float motorOutput; // motor output either position or RPM
+  
   // PID parameters
-  float desiredSpeed;
+  float referenceSignal; 
   float desiredPosition; 
-  float motorInput;
-  float Kp;
-  float Kd;
-  float Ki;
+  float desiredRPM; 
+  float motorInputSignal; 
+  float propGain; 
+  float derivGain;
+  float integralGain; 
+  float errLastTimeStep;
   float errorAccumulation;
   Encoder * encoder; // main encoder object
   
@@ -61,12 +63,30 @@ struct forceResitiveSensorDCPair : abstractMotorSensorPair {
 
   // main running function
   void run(){
+    // output is different depending on what the value of returnPosition is
     motorOutput = motorFeedback();
     sensorOutput = sensorFeedback();
 
+    // select position or velocity as reference
+    if (returnPosition){
+      referenceSignal = desiredPosition; // degrees
+    }
+    else{
+      referenceSignal = desiredRPM; // RPM
+    }
 
-    sendSpeedToMotor(motorInput, FORWARD);
-    
+    float err = referenceSignal - motorOutput;
+    float errdot = (err - errLastTimeStep);
+    errorAccumulation += err;
+
+    propGain = 1.0;
+    derivGain = 1.0;
+    integralGain = 0.0;
+
+    motorInputSignal = propGain*err + derivGain*errdot + integralGain*errorAccumulation;
+
+    sendInputToMotor(motorInputSignal);
+    errLastTimeStep = err;
   }
   
   // feedback for motor, can return speed or position
@@ -128,19 +148,18 @@ struct forceResitiveSensorDCPair : abstractMotorSensorPair {
     return rotorPosition;
   }
 
-  void sendSpeedToMotor(float speed, int dir){
-
+  void sendInputToMotor(float input){
     // input to PWM range 0-255
-    int inputSpeed = (int) speed/255;
+    int inputSignal = (int) input/255;
 
     // set spin direction
-    if (dir == FORWARD){
-      analogWrite(I1_PIN, inputSpeed);
+    if (inputSignal >= 0){
+      analogWrite(I1_PIN, inputSignal);
       digitalWrite(I2_PIN, LOW);
     }
-    if (dir == BACKWARD){
+    else{
       digitalWrite(I1_PIN, LOW);
-      analogWrite(I2_PIN, inputSpeed);
+      analogWrite(I2_PIN, inputSignal);
     }
   }
   
@@ -156,7 +175,6 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
   frs.run();
 
 }
