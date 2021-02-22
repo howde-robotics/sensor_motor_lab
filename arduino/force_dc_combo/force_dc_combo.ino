@@ -66,11 +66,9 @@ struct forceDCPair {
     calculatePosVel();
     calculateForce();
 
-    
     if (positionControl){
         reference = desiredPosition;
         current = rotorPosition;
-        desiredPosition = appliedForce;
     }
     else{
         reference = desiredRPM;
@@ -182,7 +180,9 @@ struct forceDCPair {
   }
 
   void processGuiCommand(float cmd){
-    
+    if (positionControl){
+      desiredPosition = cmd * scaleDegreesFactor;
+    }
   }
 
 };
