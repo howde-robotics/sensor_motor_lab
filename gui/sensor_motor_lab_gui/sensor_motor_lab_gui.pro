@@ -8,9 +8,9 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
-INCLUDEPATH += /opt/ros/melodic/include
+INCLUDEPATH += /opt/ros/${ROS_DISTRO}/include
 
-LIBS += -L/opt/ros/melodic/lib -lroscpp -lroslib -lrosconsole -lroscpp_serialization -lrostime -lrviz
+LIBS += -L/opt/ros/${ROS_DISTRO}/lib -lroscpp -lroslib -lrosconsole -lroscpp_serialization -lrostime -lrviz
 
 TARGET = sensor_motor_lab_gui
 TEMPLATE = app

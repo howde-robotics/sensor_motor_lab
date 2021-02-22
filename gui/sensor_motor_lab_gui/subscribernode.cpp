@@ -23,9 +23,9 @@ void SubscriberNode::setupSubscriber(ros::Subscriber *motor_fb_sub, ros::Subscri
                      std::string motor_fb_topic, std::string sensor_fb_topic,
                      MotorFbMsg &motorFbMsg, SensorFbMsg &sensorFbMsg) {
   motor_fb_sub = new ros::Subscriber();
-  *motor_fb_sub = p_nh_->subscribe(motor_fb_topic, 10, &MotorFbMsg::motorFbCallback, &motorFbMsg);
+  *motor_fb_sub = p_nh_->subscribe(motor_fb_topic, 100, &MotorFbMsg::motorFbCallback, &motorFbMsg);
   sensor_fb_sub = new ros::Subscriber();
-  *sensor_fb_sub = p_nh_->subscribe(sensor_fb_topic, 10, &SensorFbMsg::sensorFbCallback, &sensorFbMsg);
+  *sensor_fb_sub = p_nh_->subscribe(sensor_fb_topic, 100, &SensorFbMsg::sensorFbCallback, &sensorFbMsg);
 }
 
 SubscriberNode::~SubscriberNode() {

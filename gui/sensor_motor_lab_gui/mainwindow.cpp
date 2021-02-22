@@ -50,7 +50,7 @@ void MainWindow::setupPlot(QCustomPlot *plot, QVector<double> &plot_x, QVector<d
   plot->xAxis->setRange(0, time_scale);
   plot->yAxis->setRange(0, y_scale);
   for (int i = 0; i < plot_size; ++i) {
-    plot_x[i] = i * time_scale;
+    plot_x[i] = i * time_scale / plot_size;
   }
 }
 
@@ -59,7 +59,6 @@ void MainWindow::drawPlot(QCustomPlot* plot, QVector<double> &plot_x, QVector<do
   plot_y.push_back(double(sig));
   plot->graph(0)->setData(plot_x, plot_y);
   plot->replot();
-  std::this_thread::sleep_for(std::chrono::milliseconds(5));
 }
 
 void MainWindow::processCmdButton(QLineEdit* line_edit, QString motor_id, void (MainWindow::* sig)(float), float min_input, float max_input) {
@@ -76,12 +75,12 @@ void MainWindow::processCmdButton(QLineEdit* line_edit, QString motor_id, void (
   }
 
   if (input < min_input || input > max_input) {
-    QString errorStr = "[" + timeStr + "]: Value out of bound, insert number within" + QString::number(min_input) + "-" + QString::number(max_input) + "\n";
+    QString errorStr = "[" + timeStr + "]: Value out of bound, insert number within " + QString::number(min_input) + " - " + QString::number(max_input) + "\n";
     printStringTextBrowser(errorStr);
     return;
   }
 
-  QString toPrintStr = "[" + timeStr + "]: Command sent to motor " + motor_id + " with value: " + inputStr + "\n";
+  QString toPrintStr = "[" + timeStr + "]: Command sent to " + motor_id + " Motor with value: " + inputStr + "\n";
   printStringTextBrowser(toPrintStr);
   emit (this->*sig)(input);
 }
@@ -89,7 +88,7 @@ void MainWindow::processCmdButton(QLineEdit* line_edit, QString motor_id, void (
 void MainWindow::processRadioButton(QString motor_selection_str, int motor_selection, void (MainWindow:: *sig)(int)) {
   curr_motor_selection = motor_selection;
   QString timeStr = QString::number((std::chrono::system_clock::now() - start_time_).count());
-  QString toPrintStr = "[" + timeStr + "]: Motor " + motor_selection_str + " selected\n";
+  QString toPrintStr = "[" + timeStr + "]: " + motor_selection_str + " Motor selected\n";
   printStringTextBrowser(toPrintStr);
   emit (this->*sig)(motor_selection);
 
@@ -115,37 +114,37 @@ void MainWindow::slot_motor1Fb(float sig) {
 }
 
 void MainWindow::slot_sensor1Fb(float sig) {
-  drawPlot(ui->sensorPlot1, sensor1_fb_plot_y_, sensor1_fb_plot_y_, sig);
+  drawPlot(ui->sensorPlot1, sensor1_fb_plot_x_, sensor1_fb_plot_y_, sig);
 }
 
 void MainWindow::on_sendCmd1Button_clicked()
 {
   switch (curr_motor_selection) {
     case motorSelection::motor1:
-      processCmdButton(ui->cmd1LineEdit, QString::number(curr_motor_selection+1), &MainWindow::sigSendCmd1, 0.0, 2.0);
+      processCmdButton(ui->cmd1LineEdit, "Stepper", &MainWindow::sigSendCmd1, 0.0, 2.0);
       break;
     case motorSelection::motor2:
-      processCmdButton(ui->cmd1LineEdit, QString::number(curr_motor_selection+1), &MainWindow::sigSendCmd1, 0.0, 1.0);
+      processCmdButton(ui->cmd1LineEdit, "Servo", &MainWindow::sigSendCmd1, 0.0, 1.0);
       break;
     case motorSelection::motor3:
-      processCmdButton(ui->cmd1LineEdit, QString::number(curr_motor_selection+1), &MainWindow::sigSendCmd1, 0.0, 1.0);
+      processCmdButton(ui->cmd1LineEdit, "DC", &MainWindow::sigSendCmd1, 0.0, 1.0);
       break;
   }
 }
 
 void MainWindow::on_motor1RadioButton_clicked()
 {
-  processRadioButton("1", motorSelection::motor1, &MainWindow::sigSendMotorSelection);
+  processRadioButton("Stepper", motorSelection::motor1, &MainWindow::sigSendMotorSelection);
 }
 
 void MainWindow::on_motor2RadioButton_clicked()
 {
-  processRadioButton("2", motorSelection::motor2, &MainWindow::sigSendMotorSelection);
+  processRadioButton("Servo", motorSelection::motor2, &MainWindow::sigSendMotorSelection);
 }
 
 void MainWindow::on_motor3RadioButton_clicked()
 {
-  processRadioButton("3", motorSelection::motor3, &MainWindow::sigSendMotorSelection);
+  processRadioButton("DC", motorSelection::motor3, &MainWindow::sigSendMotorSelection);
 }
 
 MainWindow::~MainWindow() {
