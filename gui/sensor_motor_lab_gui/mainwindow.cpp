@@ -10,8 +10,8 @@ MainWindow::MainWindow(QWidget *parent) :
   start_time_ = std::chrono::system_clock::now();
 
   // Plotting
-  setupPlot(ui->motorPlot1, motor1_fb_plot_x_, motor1_fb_plot_y_, "motor angle (deg)", plot_size_, plot_time_scale_, 180);
-  setupPlot(ui->sensorPlot1, sensor1_fb_plot_x_, sensor1_fb_plot_y_, "flex angle (deg)", plot_size_, plot_time_scale_, 180);
+  setupPlot(ui->motorPlot1, motor1_fb_plot_x_, motor1_fb_plot_y_, "motor angle (deg)", plot_size_, plot_time_scale_, 200);
+  setupPlot(ui->sensorPlot1, sensor1_fb_plot_x_, sensor1_fb_plot_y_, "flex angle (deg)", plot_size_, plot_time_scale_, 200);
 
   // ROS
   p_publisher_node_ = new PublisherNode(&nh_);
@@ -94,8 +94,8 @@ void MainWindow::processRadioButton(QString motor_selection_str, int motor_selec
 
   switch (motor_selection) {
     case motorSelection::motor1:
-      setupPlot(ui->motorPlot1, motor1_fb_plot_x_, motor1_fb_plot_y_, "motor angle (deg)", plot_size_, plot_time_scale_, 180);
-      setupPlot(ui->sensorPlot1, sensor1_fb_plot_x_, sensor1_fb_plot_y_, "flex angle (deg)", plot_size_, plot_time_scale_, 180);
+      setupPlot(ui->motorPlot1, motor1_fb_plot_x_, motor1_fb_plot_y_, "motor angle (deg)", plot_size_, plot_time_scale_, 200);
+      setupPlot(ui->sensorPlot1, sensor1_fb_plot_x_, sensor1_fb_plot_y_, "flex angle (deg)", plot_size_, plot_time_scale_, 200);
       break;
     case motorSelection::motor2:
       setupPlot(ui->motorPlot1, motor1_fb_plot_x_, motor1_fb_plot_y_, "motor angle (deg)", plot_size_, plot_time_scale_, 180);
@@ -103,7 +103,7 @@ void MainWindow::processRadioButton(QString motor_selection_str, int motor_selec
       break;
     case motorSelection::motor3:
       setupPlot(ui->motorPlot1, motor1_fb_plot_x_, motor1_fb_plot_y_, "motor pos (ticks)", plot_size_, plot_time_scale_, 650);
-      setupPlot(ui->sensorPlot1, sensor1_fb_plot_x_, sensor1_fb_plot_y_, "force sensor (gram)", plot_size_, plot_time_scale_, 100);
+      setupPlot(ui->sensorPlot1, sensor1_fb_plot_x_, sensor1_fb_plot_y_, "force sensor (gram)", plot_size_, plot_time_scale_, 2000);
       break;
   }
 }

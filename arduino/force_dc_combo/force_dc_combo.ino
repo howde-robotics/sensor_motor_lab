@@ -12,7 +12,12 @@ struct abstractMotorSensorPair {
 
 struct forceDCPair {
   // pins
-  const int FSR_PIN = A0;
+//  const int FSR_PIN = A0;
+//  const int I1_PIN = 5;
+//  const int I2_PIN = 6;
+//  const int ENC_A_PIN = 2;
+//  const int ENC_B_PIN = 3;
+  const int FSR_PIN = A3;
   const int I1_PIN = 5;
   const int I2_PIN = 6;
   const int ENC_A_PIN = 2;
@@ -65,11 +70,11 @@ struct forceDCPair {
     if (positionControl){
         reference = desiredPosition;
         current = rotorPosition;
+        desiredPosition = appliedForce;
     }
     else{
         reference = desiredRPM;
         current = revsPerMin;
-        desiredPosition = appliedForce;
         desiredRPM = appliedForce;
     }
 
@@ -192,6 +197,6 @@ void setup() {
 
 void loop() {
   frs.run();
-//      digitalWrite(frs.I1_PIN, LOW);
+//      analogWrite(frs.I1_PIN, 255);
 //      digitalWrite(frs.I2_PIN, LOW);
 }

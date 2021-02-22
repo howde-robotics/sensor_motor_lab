@@ -28,9 +28,11 @@ private:
   ros::NodeHandle *p_nh_;
   ros::Subscriber *motor1_fb_sub_;
   ros::Subscriber *sensor1_fb_sub_;
+  ros::Subscriber *dc_position_control_sub_;
 
   MotorFbMsg motor1_fb_msg_;
   SensorFbMsg sensor1_fb_msg_;
+  SensorFbMsg dc_position_control_msg;
 
   void setupSubscriber(ros::Subscriber *motor_fb_sub, ros::Subscriber *sensor_fb_sub,
                        std::string motor_fb_topic, std::string sensor_fb_topic,
