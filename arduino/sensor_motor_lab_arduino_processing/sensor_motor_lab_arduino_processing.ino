@@ -1,17 +1,12 @@
-#include <ros.h>
-#include <std_msgs/Float32.h>
-#include <std_msgs/Int8.h>
 #include <Servo.h> 
 #include <math.h>
 #include <Encoder.h>
-#include <std_msgs/Bool.h>
-
+#include <AP_Sync.h>
 #define SERVOPIN 11       //Servo (PWM) writing
 #define LIGHTSENSORPIN A1 //Ambient light sensor reading
 #define FLEXSENSORPIN A0 //Pin in for flex meter signal
 #define BUTTONPIN 4  // pin in for button
 
-ros::NodeHandle nh;
  
 struct abstractMotorSensorPair {
   virtual void setup() = 0; // single setup function when switching between motors
@@ -86,7 +81,7 @@ struct flexStepperPair : abstractMotorSensorPair {
   const float vcc = 5.05;//voltage output from the arduino  
   const float rDiv = 47500;//Measured resistance on the voltage devider resistor
   const float rStraight = 22540;//resistance of the flex meter when straight
-  const float rBend = 45000;//resistance of the flex meter when bent at 90degrees
+  const float rBend = 52000;//resistance of the flex meter when bent at 90degrees
   
   const float motorStep = 0.9;//degrees
   
@@ -99,7 +94,6 @@ struct flexStepperPair : abstractMotorSensorPair {
 
   const float emaAlpha = 2.0/(1 + 40);//exponential moving average weighting term
   float avFlexAngle = 0;
-  float gain = 1.0;
   
   void setup() {
     //set pin IO
@@ -109,7 +103,7 @@ struct flexStepperPair : abstractMotorSensorPair {
   }
 
   void processGuiCommand(float command){
-    gain = command;
+    //no commands atm
   }
 
   float motorFeedback() {
@@ -131,24 +125,26 @@ struct flexStepperPair : abstractMotorSensorPair {
     avFlexAngle = (emaAlpha * sensorState) + (1.0 - emaAlpha) * avFlexAngle;
 
     //update the stepper motor
-    if (abs(motorState - sensorState) * gain > 2 * motorStep) {
+    if (abs(motorState - sensorState) > 2 * motorStep) {
       if (sensorState < motorState) {
         digitalWrite(dirPin, HIGH);
         digitalWrite(stepPin, HIGH);
-        delayMicroseconds(5000);
+        delayMicroseconds(4000);
         digitalWrite(stepPin, LOW);
         motorState -= motorStep;
       } else {
         digitalWrite(dirPin, LOW);
         digitalWrite(stepPin, HIGH);
-        delayMicroseconds(5000);
+        delayMicroseconds(4000);
         digitalWrite(stepPin, LOW);
         motorState += motorStep;
       }
     }
     
-    delayMicroseconds(5000);    
+    delayMicroseconds(4000);    
   }
+
+  
 };
 
 struct forceDCPair {
@@ -161,8 +157,8 @@ struct forceDCPair {
   const int FSR_PIN = A3;
   const int I1_PIN = 5;
   const int I2_PIN = 6;
-  const int ENC_A_PIN = 12;
-  const int ENC_B_PIN = 13;
+  const int ENC_A_PIN = 2;
+  const int ENC_B_PIN = 3;
 
   // constant numbers
   const int MS_PER_REV = 674;
@@ -339,60 +335,9 @@ struct forceDCPair {
 
 };
 
+AP_Sync streamer(Serial);
+
 class SensorMotorLab {
-public:
-  SensorMotorLab() :
-  motor_cmd_sub("motor_cmd", &SensorMotorLab::motor_cmd_cb, this),
-  motor_selection_sub("motor_selection", &SensorMotorLab::motor_selection_cb, this),
-  motor_fb_pub("motor_fb", &motor_fb_msg),
-  sensor_fb_pub("sensor_fb", &sensor_fb_msg)
-//  dc_position_control_pub("dc_position_control", &dc_position_control_msg)/
-  {}
-
-  void init(ros::NodeHandle& nh) {
-    flexStepperObj.setup();
-    
-    nh.advertise(motor_fb_pub);
-    nh.advertise(sensor_fb_pub);
-//    nh.advertise(dc_position_control_pub);/
-  
-    nh.subscribe(motor_cmd_sub);
-    nh.subscribe(motor_selection_sub);
-  }
-
-  void run() {
-    switch (curr_motor) {
-      case motorSelection::motor1:
-        flexStepperObj.run();
-        motor_fb_msg.data = flexStepperObj.motorFeedback();
-        sensor_fb_msg.data = flexStepperObj.sensorFeedback();
-        break;
-      case motorSelection::motor2:
-        lightServoObj.run();
-        motor_fb_msg.data = lightServoObj.motorFeedback();
-        sensor_fb_msg.data = lightServoObj.sensorFeedback();
-        break;
-      case motorSelection::motor3:
-        forceDCObj.run();
-        motor_fb_msg.data = forceDCObj.motorFeedback();
-        sensor_fb_msg.data = forceDCObj.sensorFeedback();
-        break;
-    }
-//    noInterrupts();
-    motor_fb_pub.publish(&motor_fb_msg);
-    sensor_fb_pub.publish(&sensor_fb_msg);
-//    interrupts();
-
-    if (readButtonWithDebounce(BUTTONPIN, &buttonState, &prevButtonState, &lastDebounceTime)) {
-      forceDCObj.togglePositionControl();
-//      dc_position_control_msg.data = forceDCObj.positionControl;
-//      dc_position_control_pub.publish(&dc_position_control_msg);
-    }
-  }
-
-private:
-  std_msgs::Float32 motor_fb_msg, sensor_fb_msg;
-//  std_msgs::Bool dc_position_control_msg;/
 
   enum motorSelection {
     motor1,
@@ -400,14 +345,56 @@ private:
     motor3
   };
 
-  short int curr_motor = motorSelection::motor1;
+  short int curr_motor = motorSelection::motor2;
+  
+public:
+  SensorMotorLab()
+  {}
 
-  ros::Publisher motor_fb_pub;
-  ros::Publisher sensor_fb_pub;
-//  ros::Publisher dc_position_control_pub;/
+  void init() {
+    switch(curr_motor) {
+      case motorSelection::motor1:
+        flexStepperObj.setup();
+        break;
+      case motorSelection::motor2:
+        lightServoObj.setup();
+        break;
+      case motorSelection::motor3:
+        forceDCObj.setup();
+        break;
+    } 
+  }
 
-  ros::Subscriber<std_msgs::Float32, SensorMotorLab> motor_cmd_sub;
-  ros::Subscriber<std_msgs::Int8, SensorMotorLab> motor_selection_sub;
+  void run() {
+    float data1;
+    float data2;
+    switch (curr_motor) {
+      case motorSelection::motor1:
+        flexStepperObj.run();
+        data1 = flexStepperObj.motorFeedback();
+        data2 = flexStepperObj.sensorFeedback();
+        break;
+      case motorSelection::motor2:
+        lightServoObj.run();
+        data1 = lightServoObj.motorFeedback();
+        data2 = lightServoObj.sensorFeedback();
+        break;
+      case motorSelection::motor3:
+        forceDCObj.run();
+        data1 = forceDCObj.motorFeedback();
+        data2 = forceDCObj.sensorFeedback();
+        break;
+    }
+
+    
+    streamer.sync("arduinoMotorLoc", data1);
+    streamer.sync("arduinoSensorLoc", data2);
+//    if (readButtonWithDebounce(BUTTONPIN, &buttonState, &prevButtonState, &lastDebounceTime)) {
+//      forceDCObj.togglePositionControl();
+//    }
+  }
+
+private:
 
   flexStepperPair flexStepperObj;
   lightServoPair lightServoObj;
@@ -442,48 +429,31 @@ private:
     return output;
   }
 
-  void motor_cmd_cb(const std_msgs::Float32& msg) {
-    flexStepperObj.processGuiCommand(msg.data);
-  }
+//  void motor_selection_cb() {
+//    currMotor
+//    switch (curr_motor) {
+//      case motorSelection::motor1:
+//        flexStepperObj.setup();
+//        break;
+//      case motorSelection::motor2:
+//        lightServoObj.setup();
+//        break;
+//      case motorSelection::motor3:
+//        forceDCObj.setup();
+//        break;
+//    }
+//  }
 
-  void motor_selection_cb(const std_msgs::Int8& msg) {
-    curr_motor = msg.data;
-    switch (curr_motor) {
-      case motorSelection::motor1:
-        flexStepperObj.setup();
-        break;
-      case motorSelection::motor2:
-        lightServoObj.setup();
-        break;
-      case motorSelection::motor3:
-        forceDCObj.setup();
-        break;
-    }
-  }
-
-  template <class T>
-  void sensorMotorPairRun(T obj) {
-    obj.run();
-    motor_fb_msg.data = obj.motorFeedback();
-    sensor_fb_msg.data = obj.sensorFeedback();
-  }
 };
 
 SensorMotorLab node;
-unsigned long prevTime;
 
 void setup() {
-  nh.initNode();
-  node.init(nh);
-//  prevTime = millis();/
+  Serial.begin(57600);
+  node.init();
 }
 
 void loop() {
   node.run();
-//  /if (millis() - prevTime > 20) {
-//    noInterrupts();
-    nh.spinOnce();
-//   / prevTime = millis();
-//    interrupts();
-//  }/
+
 }
