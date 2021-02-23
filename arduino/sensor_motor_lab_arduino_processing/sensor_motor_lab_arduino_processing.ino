@@ -166,7 +166,7 @@ struct forceDCPair {
 //  const int ENC_B_PIN = 3;
   
   // constant numbers
-  const int MS_PER_REV = 674;
+  const int MS_PER_REV = 750;
   const float VCC = 4.98; // supply voltage
   const float R_DIV = 10000; // resistance in voltage divider
   
@@ -187,7 +187,7 @@ struct forceDCPair {
   float prevErr;
   float errAccumulation;
   float controlSignal;
-  float scaleInputFactor = MS_PER_REV / 255 * 2;
+  float scaleInputFactor = MS_PER_REV / 255;
   float scaleDegreesFactor = MS_PER_REV / 360;
 
   //moving average of velocity
@@ -391,6 +391,14 @@ void loop() {
           curr_motor = motorSelection::motor3;
           forceDCObj.setup();
           forceDCObj.setMotionGains(1, 1, 0, 300*forceDCObj.scaleDegreesFactor, 40, forceDCObj.positionControl);
+        }else if(command.indexOf(" ") != -1) {
+          if (forceDCObj.positionControl) {
+            float val = (command.substring(command.indexOf(" ") + 1)).toInt() /360. * float(forceDCObj.MS_PER_REV);
+            forceDCObj.desiredPosition = val;
+            forceDCObj.desiredRPM = 0;
+          }
+          
+          
         }
       }
     }

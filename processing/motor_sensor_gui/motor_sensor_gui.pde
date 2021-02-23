@@ -40,9 +40,15 @@ int currMotorSensorPair = 0;//0=flx, 1=light, 2=force
 public float arduinoMotorLoc = 0;
 public float arduinoSensorLoc = 0;
 public int dcPosControl = 0;
-void setup(){ //same as arduino program
 
-  size(1500, 1000);    //window size, (width, height)
+Textfield myText;
+
+//public void setTextFocus(){
+//  myText.setFocus(true);
+//}
+
+void setup(){ //same as arduino program
+  size(800, 550);    //window size, (width, height)
   streamer = new AP_Sync(this,"/dev/ttyACM0", 57600);
   printArray(Serial.list());   //prints all available serial ports
   
@@ -67,14 +73,15 @@ void setup(){ //same as arduino program
     .setSize(120, 70)      //(width, height)
     .activateBy(ControlP5.RELEASE)
   ;
+  
+  myText = cp5.addTextfield("CMD_INPUT",80,340,150,60);
 
 }
 
 void draw(){  //same as loop in arduino
-
+  myText.setFocus(true);
   background(150, 0 , 150); // background color of window (r, g, b) or (0 to 255)
-  
-  fill(0, 255, 0);               //text color (r, g, b)
+
   text("Sensor Motor GUI", 80, 30);  // ("text", x coordinate, y coordinat)
   if (currMotorSensorPair == 2) {
     if (dcPosControl == 1) {
@@ -115,6 +122,10 @@ void draw(){  //same as loop in arduino
   motorChart3Vel.removeData("motor",0);
   
   
+}
+
+public void CMD_INPUT(String input) {
+  streamer.send("pos " + input);
 }
 
 public void setupCharts() {
