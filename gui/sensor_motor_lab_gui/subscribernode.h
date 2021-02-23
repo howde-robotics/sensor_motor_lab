@@ -23,6 +23,7 @@ signals:
   void sigStopped();
   void sigMotor1Fb(float);
   void sigSensor1Fb(float);
+  void sigDcControlFb(bool);
 
 private:
   ros::NodeHandle *p_nh_;
@@ -32,7 +33,7 @@ private:
 
   MotorFbMsg motor1_fb_msg_;
   SensorFbMsg sensor1_fb_msg_;
-  SensorFbMsg dc_position_control_msg;
+  DcControlFbMsg dc_position_control_msg;
 
   void setupSubscriber(ros::Subscriber *motor_fb_sub, ros::Subscriber *sensor_fb_sub,
                        std::string motor_fb_topic, std::string sensor_fb_topic,

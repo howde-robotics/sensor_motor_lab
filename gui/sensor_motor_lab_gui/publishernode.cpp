@@ -4,7 +4,7 @@ PublisherNode::PublisherNode(ros::NodeHandle *p_nh): p_nh_(p_nh) {
   p_cmd1_pub_ = new ros::Publisher();
   p_motor_selection_pub_ = new ros::Publisher();
 
-  *p_cmd1_pub_ = p_nh_->advertise<std_msgs::Float32>("/motor_cmd", 10, true);
+  *p_cmd1_pub_ = p_nh_->advertise<std_msgs::Float32>("/motor_cmd", 1, true);
   *p_motor_selection_pub_ = p_nh_->advertise<std_msgs::Int8>("/motor_selection", 1, true);
 }
 

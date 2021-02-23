@@ -20,11 +20,15 @@ Chart sensorChart1;//flex 0-90
 Chart motorChart1;//stepper 0-90
 float sensor1Max = 180;
 float motor1Max = 180;
+String yLabelTop1 = "Angle (degrees)";
+String yLabelBottom1 = "Angle (degrees)";
 
 Chart sensorChart2;//flex 0-90
 Chart motorChart2;//stepper 0-90
-float sensor2Max = 1000;
+float sensor2Max = 10000;
 float motor2Max = 180;
+String yLabelTop2 = "Illuminance (lux)";
+String yLabelBottom2 = "Angle (degrees)";
 
 Chart sensorChart3;//flex 0-90
 Chart motorChart3Pos;
@@ -32,6 +36,9 @@ Chart motorChart3Vel;
 float sensor3Max = 2000;
 float motor3PosMax = 360;
 float motor3VelMax = 100;
+String yLabelTop3 = "Force (g)";
+String yLabelBottom3_vel = "Velocity (RPM)";
+String yLabelBottom3_pos = "Position (degrees)";
 
 float currSensorMax = sensor1Max;
 float currMotorMax = motor1Max;
@@ -40,6 +47,10 @@ int currMotorSensorPair = 0;//0=flx, 1=light, 2=force
 public float arduinoMotorLoc = 0;
 public float arduinoSensorLoc = 0;
 public int dcPosControl = 0;
+
+Button fsButton;
+Button lsButton;
+Button fdButton;
 
 Textfield myText;
 
@@ -56,22 +67,25 @@ void setup(){ //same as arduino program
   
   setupCharts();
   
-  cp5.addButton("Flex_Stepper")     //"red" is the name of button
+  fsButton = cp5.addButton("Flex_Stepper")     //"red" is the name of button
     .setPosition(100, 50)  //x and y coordinates of upper left corner of button
     .setSize(120, 70)      //(width, height)
     .activateBy(ControlP5.RELEASE)
+    .setColorBackground(color(255,0,0))
   ;   
 
-  cp5.addButton("Light_Servo")     //"yellow" is the name of button
+  lsButton = cp5.addButton("Light_Servo")     //"yellow" is the name of button
     .setPosition(100, 150)  //x and y coordinates of upper left corner of button
     .setSize(120, 70)      //(width, height)
     .activateBy(ControlP5.RELEASE)
+    .setColorBackground(color(0,0,0))
   ;
 
-  cp5.addButton("Force_DC")     //"blue" is the name of button
+  fdButton = cp5.addButton("Force_DC")     //"blue" is the name of button
     .setPosition(100, 250)  //x and y coordinates of upper left corner of button
     .setSize(120, 70)      //(width, height)
     .activateBy(ControlP5.RELEASE)
+    .setColorBackground(color(0,0,0))
   ;
   
   myText = cp5.addTextfield("CMD_INPUT",80,340,150,60);
@@ -95,6 +109,22 @@ void draw(){  //same as loop in arduino
       motorChart3Pos.hide();
       motorChart3Vel.show();
     }
+  }
+  
+  if (currMotorSensorPair == 0){
+    text(yLabelTop1, topChartX - 30, topChartY - 5);
+    text(yLabelBottom1, bottomChartX - 30, bottomChartY - 5);
+  } else if (currMotorSensorPair == 1) {
+    text(yLabelTop2, topChartX - 30, topChartY - 5);
+    text(yLabelBottom2, bottomChartX - 30, bottomChartY - 5);
+  } else if (dcPosControl == 0) {
+    //velocity
+    text(yLabelTop3, topChartX - 30, topChartY - 5);
+    text(yLabelBottom3_vel, bottomChartX - 30, bottomChartY - 5);
+  }else {
+    //position
+    text(yLabelTop3, topChartX - 30, topChartY - 5);
+    text(yLabelBottom3_pos, bottomChartX - 30, bottomChartY - 5);
   }
   
   text(0, topChartX - 30, topChartY + chartHeight);
@@ -229,6 +259,9 @@ public void Flex_Stepper() {
   motorChart3Vel.hide();
   streamer.send("motor1");
   currMotorSensorPair = 0;
+  fsButton.setColorBackground(color(255,0,0));
+  lsButton.setColorBackground(color(0,0,0));
+  fdButton.setColorBackground(color(0,0,0));
 }
 
 public void Light_Servo() {
@@ -243,6 +276,9 @@ public void Light_Servo() {
   motorChart3Vel.hide();
   streamer.send("motor2");
   currMotorSensorPair = 1;
+  fsButton.setColorBackground(color(0,0,0));
+  lsButton.setColorBackground(color(255,0,0));
+  fdButton.setColorBackground(color(0,0,0));
 }
 
 public void Force_DC() {
@@ -255,4 +291,7 @@ public void Force_DC() {
   sensorChart3.show();
   streamer.send("motor3");
   currMotorSensorPair = 2;
+  fsButton.setColorBackground(color(0,0,0));
+  lsButton.setColorBackground(color(0,0,0));
+  fdButton.setColorBackground(color(255,0,0));
 }

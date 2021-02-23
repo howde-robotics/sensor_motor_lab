@@ -32,6 +32,7 @@ signals:
 private slots:
   void slot_motor1Fb(float);
   void slot_sensor1Fb(float);
+  void slot_dcPositionControl(bool);
 
   void on_sendCmd1Button_clicked();
   void on_motor1RadioButton_clicked();

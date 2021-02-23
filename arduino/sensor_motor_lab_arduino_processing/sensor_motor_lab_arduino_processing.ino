@@ -48,7 +48,10 @@ struct lightServoPair : abstractMotorSensorPair {
 
   float sensorFeedback() {
     //  Returns sensor illuminance in lux(lx)
-    return analogRead(LIGHTSENSORPIN);
+    float volts = analogRead(LIGHTSENSORPIN) * 5.0 / 1024.0;
+    float amps = volts/10000.00;
+    float uamps = amps * 10000000;
+    return uamps * 2;
   }
 
   void run(){
@@ -190,6 +193,8 @@ struct forceDCPair {
   float scaleInputFactor = MS_PER_REV / 255;
   float scaleDegreesFactor = MS_PER_REV / 360;
 
+  float forceOffset = 750;
+  
   //moving average of velocity
   const float emaAlpha = 2.0/(1 + 20);//exponential moving average weighting term
   float prevPos = 0;
@@ -393,7 +398,9 @@ void loop() {
           forceDCObj.setMotionGains(1, 1, 0, 300*forceDCObj.scaleDegreesFactor, 40, forceDCObj.positionControl);
         }else if(command.indexOf(" ") != -1) {
           if (forceDCObj.positionControl) {
-            float val = (command.substring(command.indexOf(" ") + 1)).toInt() /360. * float(forceDCObj.MS_PER_REV);
+            int input = (command.substring(command.indexOf(" ") + 1)).toInt();
+            float clamped = constrain(input, 0, 360);
+            float val =  clamped/360. * float(forceDCObj.MS_PER_REV);
             forceDCObj.desiredPosition = val;
             forceDCObj.desiredRPM = 0;
           }

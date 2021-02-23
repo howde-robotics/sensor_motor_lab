@@ -18,8 +18,8 @@ struct flexStepperPair : abstractMotorSensorPair {
   const float motorStep = 0.9;//degrees
   
   const int flexPin = A0;//Pin in for flex meter signal
-  const int  stepPin = 3;//pin out for stepper step command
-  const int dirPin = 2;//pin out for stepper direction command
+  const int  stepPin = 8;//pin out for stepper step command
+  const int dirPin = 7;//pin out for stepper direction command
   
   float motorState = 0;//starting motor state value (degrees)
   float sensorState = 0;//starting flex state value (will be immediately overwritten

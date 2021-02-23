@@ -1,5 +1,5 @@
 #include <Encoder.h>
-
+#include <AP_Sync.h>
 struct abstractMotorSensorPair {
   virtual void setup() = 0;
   virtual void run() = 0;//single loop of read the sensor and set the motor
@@ -10,14 +10,24 @@ struct abstractMotorSensorPair {
   virtual void processGuiCommand(float cmd) = 0;
 };
 
+AP_Sync streamer(Serial);
+
+const int ENC_A_PIN = 2;
+const int ENC_B_PIN = 3;
+Encoder enc(ENC_A_PIN, ENC_B_PIN);
+
 struct forceDCPair {
   // pins
-  const int FSR_PIN = A0;
+//  const int FSR_PIN = A0;
+//  const int I1_PIN = 5;
+//  const int I2_PIN = 6;
+//  const int ENC_A_PIN = 2;
+//  const int ENC_B_PIN = 13;
+  const int FSR_PIN = A3;
   const int I1_PIN = 5;
   const int I2_PIN = 6;
-  const int ENC_A_PIN = 2;
-  const int ENC_B_PIN = 3;
-
+  
+  
   // constant numbers
   const int MS_PER_REV = 674;
   const float VCC = 4.98; // supply voltage
@@ -44,14 +54,12 @@ struct forceDCPair {
   float controlSignal;
   float scaleInputFactor = MS_PER_REV / 255;
   float scaleDegreesFactor = MS_PER_REV / 360;
-  Encoder * structEnc;
+  
 
   void setup(){
     pinMode(FSR_PIN, INPUT);
     pinMode(I1_PIN, OUTPUT);
     pinMode(I2_PIN, OUTPUT);
-    Encoder enc(ENC_A_PIN, ENC_B_PIN);
-    structEnc = & enc;
   }
 
   void run(){
@@ -74,12 +82,6 @@ struct forceDCPair {
     }
 
     float err = reference - current;
-    Serial.print("Position: ");
-    Serial.println(rotorPosition);
-    Serial.print("RPM: ");
-    Serial.println(revsPerMin);
-    Serial.print("Error: ");
-    Serial.println(err);
     float errDot = err - prevErr;
     errAccumulation += err;
     prevErr = err;
@@ -90,11 +92,11 @@ struct forceDCPair {
 
   
   void calculatePosVel(){
-    rotorPosition = abs(structEnc->read());
+    rotorPosition = abs(enc.read());
     
     // calculate RPM
     if (rotorPosition >= MS_PER_REV){
-      structEnc->write(0);
+      enc.write(0);
       timePerRev = millis() - curTime;
       curTime = millis();
       revsPerMin = 1 / (timePerRev / (1000.0 * 60));
@@ -132,8 +134,6 @@ struct forceDCPair {
 
   void sendMotorInput(float speed){
     int input = (int) speed/scaleInputFactor;
-    Serial.print("Input Signal: ");
-    Serial.println(input);
     
     if (input >= 0){
       if (abs(input) > 10)
@@ -185,15 +185,25 @@ struct forceDCPair {
 };
 
 forceDCPair frs;
+//Encoder enc(2, 13);
 
 void setup() {
-    Serial.begin(9600);
+    Serial.begin(57600);
     frs.setup();
-    frs.setMotionGains(1, 1, 0, 270, 40, false);
+    frs.setMotionGains(1, 1, 0, 300*frs.scaleDegreesFactor, 40, false);
 }
 
 void loop() {
   frs.run();
-//      digitalWrite(frs.I1_PIN, LOW);
-//      digitalWrite(frs.I2_PIN, LOW);
+  float sensorRead = frs.sensorFeedback();
+  float motorRead = frs.motorFeedback();
+  streamer.sync("arduinoMotorLoc", motorRead);
+  streamer.sync("arduinoSensorLoc", sensorRead);
+  Serial.flush();
+  if (Serial.available()) {
+    String command = Serial.readString();
+    
+    Serial.flush();
+  }
+  Serial.flush();
 }

@@ -2,6 +2,7 @@
 #define MSGS_H
 
 #include <std_msgs/Float32.h>
+#include <std_msgs/Bool.h>
 
 struct MotorFbMsg {
   float motor_fb;
@@ -16,6 +17,14 @@ struct SensorFbMsg {
   SensorFbMsg(): sensor_fb(0.0) {}
   void sensorFbCallback(const std_msgs::Float32::ConstPtr& sensor_fb_msg) {
     sensor_fb = sensor_fb_msg->data;
+  }
+};
+
+struct DcControlFbMsg {
+  bool msg;
+  DcControlFbMsg(): msg(true) {}
+  void FbCallback(const std_msgs::Bool::ConstPtr& fb_msg) {
+    msg = fb_msg->data;
   }
 };
 

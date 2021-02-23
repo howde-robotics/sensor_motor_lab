@@ -24,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent) :
   connect(this, SIGNAL(init()), p_subscriber_node_, SLOT(slotStartSubs()));
   connect(p_subscriber_node_, SIGNAL(sigMotor1Fb(float)), this, SLOT(slot_motor1Fb(float)));
   connect(p_subscriber_node_, SIGNAL(sigSensor1Fb(float)), this, SLOT(slot_sensor1Fb(float)));
+  connect(p_subscriber_node_, SIGNAL(sigDcControlFb(bool)), this, SLOT(slot_dcPositionControl(bool)));
   connect(p_subscriber_node_, SIGNAL(finished()), &p_subcriber_node_thread_, SLOT(quit()));
   p_subscriber_node_->moveToThread(&p_subcriber_node_thread_);
 
@@ -117,6 +118,12 @@ void MainWindow::slot_sensor1Fb(float sig) {
   drawPlot(ui->sensorPlot1, sensor1_fb_plot_x_, sensor1_fb_plot_y_, sig);
 }
 
+void MainWindow::slot_dcPositionControl(bool sig) {
+  QString timeStr = QString::number((std::chrono::system_clock::now() - start_time_).count());
+  QString toPrintStr = "[" + timeStr + "]: DC Motor Position Control :" + sig + "\n";
+//  printStringTextBrowser(toPrintStr);
+}
+
 void MainWindow::on_sendCmd1Button_clicked()
 {
   switch (curr_motor_selection) {
@@ -127,7 +134,7 @@ void MainWindow::on_sendCmd1Button_clicked()
       processCmdButton(ui->cmd1LineEdit, "Servo", &MainWindow::sigSendCmd1, 0.0, 1.0);
       break;
     case motorSelection::motor3:
-      processCmdButton(ui->cmd1LineEdit, "DC", &MainWindow::sigSendCmd1, 0.0, 1.0);
+      processCmdButton(ui->cmd1LineEdit, "DC", &MainWindow::sigSendCmd1, 0.0, 360.0);
       break;
   }
 }
