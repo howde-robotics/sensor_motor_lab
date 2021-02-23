@@ -27,20 +27,23 @@ float sensor2Max = 1000;
 float motor2Max = 180;
 
 Chart sensorChart3;//flex 0-90
-Chart motorChart3;//stepper 0-90
+Chart motorChart3Pos;
+Chart motorChart3Vel;
 float sensor3Max = 2000;
-float motor3Max = 10;
+float motor3PosMax = 360;
+float motor3VelMax = 100;
 
 float currSensorMax = sensor1Max;
 float currMotorMax = motor1Max;
+int currMotorSensorPair = 0;//0=flx, 1=light, 2=force
 
 public float arduinoMotorLoc = 0;
 public float arduinoSensorLoc = 0;
-
+public int dcPosControl = 0;
 void setup(){ //same as arduino program
 
   size(1500, 1000);    //window size, (width, height)
-  streamer = new AP_Sync(this,"/dev/ttyACM0", 9600);
+  streamer = new AP_Sync(this,"/dev/ttyACM0", 57600);
   printArray(Serial.list());   //prints all available serial ports
   
   cp5 = new ControlP5(this);
@@ -64,12 +67,28 @@ void setup(){ //same as arduino program
     .setSize(120, 70)      //(width, height)
     .activateBy(ControlP5.RELEASE)
   ;
-  
+
 }
 
 void draw(){  //same as loop in arduino
 
   background(150, 0 , 150); // background color of window (r, g, b) or (0 to 255)
+  
+  fill(0, 255, 0);               //text color (r, g, b)
+  text("Sensor Motor GUI", 80, 30);  // ("text", x coordinate, y coordinat)
+  if (currMotorSensorPair == 2) {
+    if (dcPosControl == 1) {
+      text("DC Control Mode: POSITION", 80, 45);
+      currMotorMax = motor3PosMax;
+      motorChart3Pos.show();
+      motorChart3Vel.hide();
+    } else {
+      text("DC Control Mode: VELOCITY", 80, 45);
+      currMotorMax = motor3VelMax;
+      motorChart3Pos.hide();
+      motorChart3Vel.show();
+    }
+  }
   
   text(0, topChartX - 30, topChartY + chartHeight);
   text(int(currSensorMax/2), topChartX - 30, topChartY + chartHeight/2 + 5);
@@ -90,14 +109,12 @@ void draw(){  //same as loop in arduino
   motorChart1.removeData("motor",0);
   motorChart2.addData("motor", arduinoMotorLoc);
   motorChart2.removeData("motor",0);
-  motorChart3.addData("motor", arduinoMotorLoc);
-  motorChart3.removeData("motor",0);
+  motorChart3Pos.addData("motor", arduinoMotorLoc);
+  motorChart3Pos.removeData("motor",0);
+  motorChart3Vel.addData("motor", arduinoMotorLoc);
+  motorChart3Vel.removeData("motor",0);
   
-  //lets give title to our window
-  fill(0, 255, 0);               //text color (r, g, b)
-  text("Sensor Motor GUI", 80, 30);  // ("text", x coordinate, y coordinat)
-  //text(arduinoMotorLoc, 90, 30);
-  //text(arduinoSensorLoc, 90, 40);
+  
 }
 
 public void setupCharts() {
@@ -162,18 +179,31 @@ public void setupCharts() {
   sensorChart3.setColors("sensor", color(255));
   sensorChart3.setData("sensor", new float[50]);
   sensorChart3.setStrokeWeight(1.5);
-  motorChart3 = cp5.addChart("DC Reading")
+  motorChart3Pos = cp5.addChart("DC Pos Reading")
                .setPosition(bottomChartX, bottomChartY)
                .setSize(chartWidth, chartHeight)
-               .setRange(0, motor3Max)
+               .setRange(0, motor3PosMax)
                .setView(Chart.LINE)
                .hide()
                ;
-  motorChart3.getColor().setBackground(color(255, 100));
-  motorChart3.addDataSet("motor");
-  motorChart3.setColors("motor", color(255));
-  motorChart3.setData("motor", new float[50]);
-  motorChart3.setStrokeWeight(1.5);
+  motorChart3Pos.getColor().setBackground(color(255, 100));
+  motorChart3Pos.addDataSet("motor");
+  motorChart3Pos.setColors("motor", color(255));
+  motorChart3Pos.setData("motor", new float[50]);
+  motorChart3Pos.setStrokeWeight(1.5);
+  
+  motorChart3Vel = cp5.addChart("DC Vel Reading")
+               .setPosition(bottomChartX, bottomChartY)
+               .setSize(chartWidth, chartHeight)
+               .setRange(0, motor3VelMax)
+               .setView(Chart.LINE)
+               .hide()
+               ;
+  motorChart3Vel.getColor().setBackground(color(255, 100));
+  motorChart3Vel.addDataSet("motor");
+  motorChart3Vel.setColors("motor", color(255));
+  motorChart3Vel.setData("motor", new float[50]);
+  motorChart3Vel.setStrokeWeight(1.5);
 }
 
 public void Flex_Stepper() {
@@ -184,8 +214,10 @@ public void Flex_Stepper() {
   sensorChart2.hide();
   motorChart2.hide();
   sensorChart3.hide();
-  motorChart3.hide();
+  motorChart3Pos.hide();
+  motorChart3Vel.hide();
   streamer.send("motor1");
+  currMotorSensorPair = 0;
 }
 
 public void Light_Servo() {
@@ -196,18 +228,20 @@ public void Light_Servo() {
   sensorChart2.show();
   motorChart2.show();
   sensorChart3.hide();
-  motorChart3.hide();
+  motorChart3Pos.hide();
+  motorChart3Vel.hide();
   streamer.send("motor2");
+  currMotorSensorPair = 1;
 }
 
 public void Force_DC() {
   currSensorMax = sensor3Max;
-  currMotorMax = motor3Max;
+  currMotorMax = motor3VelMax;
   sensorChart1.hide();
   motorChart1.hide();
   sensorChart2.hide();
   motorChart2.hide();
   sensorChart3.show();
-  motorChart3.show();
   streamer.send("motor3");
+  currMotorSensorPair = 2;
 }

@@ -7,7 +7,8 @@
 #define FLEXSENSORPIN A0 //Pin in for flex meter signal
 #define BUTTONPIN 4  // pin in for button
 
- 
+AP_Sync streamer(Serial);
+
 struct abstractMotorSensorPair {
   virtual void setup() = 0; // single setup function when switching between motors
   virtual void run() = 0; // single loop of read the sensor and set the motor
@@ -147,19 +148,23 @@ struct flexStepperPair : abstractMotorSensorPair {
   
 };
 
+const int ENC_A_PIN = 2;
+const int ENC_B_PIN = 3;
+Encoder enc(ENC_A_PIN, ENC_B_PIN);
+
 struct forceDCPair {
   // pins
 //  const int FSR_PIN = A0;
 //  const int I1_PIN = 5;
 //  const int I2_PIN = 6;
 //  const int ENC_A_PIN = 2;
-//  const int ENC_B_PIN = 3;
+//  const int ENC_B_PIN = 13;
   const int FSR_PIN = A3;
   const int I1_PIN = 5;
   const int I2_PIN = 6;
-  const int ENC_A_PIN = 2;
-  const int ENC_B_PIN = 3;
-
+//  const int ENC_A_PIN = 2;
+//  const int ENC_B_PIN = 3;
+  
   // constant numbers
   const int MS_PER_REV = 674;
   const float VCC = 4.98; // supply voltage
@@ -167,10 +172,8 @@ struct forceDCPair {
   
   // motor stuff
   long rotorPosition;
-  int curTime;
-  int timePerRev;
   float revsPerMin;
-  bool positionControl = true;
+  bool positionControl = false;
 
   // sensor stuff
   float appliedForce;
@@ -184,28 +187,23 @@ struct forceDCPair {
   float prevErr;
   float errAccumulation;
   float controlSignal;
-  float scaleInputFactor = MS_PER_REV / 255;
+  float scaleInputFactor = MS_PER_REV / 255 * 2;
   float scaleDegreesFactor = MS_PER_REV / 360;
-  Encoder * structEnc;
 
-  void togglePositionControl() {
-    positionControl = !positionControl;
-  }
+  //moving average of velocity
+  const float emaAlpha = 2.0/(1 + 20);//exponential moving average weighting term
+  float prevPos = 0;
+  float prevTime = 0;
 
   void setup(){
     pinMode(FSR_PIN, INPUT);
     pinMode(I1_PIN, OUTPUT);
     pinMode(I2_PIN, OUTPUT);
-    Encoder enc(ENC_A_PIN, ENC_B_PIN);
-    structEnc = & enc;
-    setMotionGains(1, 1, 0, 270, 40, false);
   }
 
   void run(){
     float reference;
     float current;
-    
-    structEnc->read();
   
     calculatePosVel();
     calculateForce();
@@ -216,36 +214,48 @@ struct forceDCPair {
         current = rotorPosition;
     }
     else{
+        desiredRPM = appliedForce;
         reference = desiredRPM;
         current = revsPerMin;
-        desiredRPM = appliedForce;
+        desiredPosition = appliedForce;
     }
 
+    
     float err = reference - current;
-//    Serial.print("Position: ");
-//    Serial.println(rotorPosition);
-//    Serial.print("RPM: ");
-//    Serial.println(revsPerMin);
-//    Serial.print("Error: ");
-//    Serial.println(err);
     float errDot = err - prevErr;
     errAccumulation += err;
     prevErr = err;
-
+    
     controlSignal = pGain*err + dGain*errDot + iGain*errAccumulation;
     sendMotorInput(controlSignal);
   }
 
-  
+  bool wrappedAround = false;
+    
   void calculatePosVel(){
-    rotorPosition = abs(structEnc->read());
+    rotorPosition = abs(enc.read());
+
+    unsigned long now = millis(); 
+    unsigned long dt = now - prevTime;
+    prevTime = now;
+    float dW = 0;
+    if (wrappedAround) {
+      dW = (rotorPosition + MS_PER_REV - prevPos)/float(MS_PER_REV);//fraction of a revolution 0-1
+      wrappedAround = false;
+    } else {
+      dW = (rotorPosition - prevPos)/float(MS_PER_REV);
+    }
+    float instW = 0;
+    if (dt > 0) {
+      instW = dW / dt * 1000 * 60;
+    }
+    revsPerMin = (emaAlpha * instW) + (1.0 - emaAlpha) * revsPerMin ;
+    prevPos = rotorPosition;
     
     // calculate RPM
     if (rotorPosition >= MS_PER_REV){
-      structEnc->write(0);
-      timePerRev = millis() - curTime;
-      curTime = millis();
-      revsPerMin = 1 / (timePerRev / (1000.0 * 60));
+      enc.write(0);
+      wrappedAround = true;
     }
   }
   
@@ -280,12 +290,10 @@ struct forceDCPair {
 
   void sendMotorInput(float speed){
     int input = (int) speed/scaleInputFactor;
-//    Serial.print("Input Signal: ");
-//    Serial.println(input);
-    
+   
     if (input >= 0){
       if (abs(input) > 10)
-      {input = constrain(input, 70, 125);
+      {input = constrain(input, 70, 255);
       analogWrite(I1_PIN, abs(input));
       digitalWrite(I2_PIN, LOW);
       }
@@ -296,7 +304,7 @@ struct forceDCPair {
     }
     else {
       if (abs(input) > 10){
-        input = constrain(input, -125, -70);
+        input = constrain(input, -255, -70);
         digitalWrite(I1_PIN, LOW);
         analogWrite(I2_PIN, abs(input));
       }
@@ -318,7 +326,7 @@ struct forceDCPair {
   }
 
   float motorFeedback(){
-    return controlSignal;
+    return rotorPosition * 360./MS_PER_REV;
   }
   float sensorFeedback(){
     return appliedForce;
@@ -332,44 +340,45 @@ struct forceDCPair {
 
 };
 
-AP_Sync streamer(Serial);
+//button debounce
+unsigned long lastButtonPress = 0;
+int msDebounce = 500;
+volatile int buttonState = 0;
+int totalNumButtonStates = 2;
 
-class SensorMotorLab {
-
-  enum motorSelection {
+enum motorSelection {
     motor1,
     motor2,
     motor3
   };
 
-  short int curr_motor = motorSelection::motor3;
+short int curr_motor = motorSelection::motor1;
+
+flexStepperPair flexStepperObj;
+lightServoPair lightServoObj;
+forceDCPair forceDCObj;
+
+void setup() {
+  Serial.begin(57600);
+  pinMode(BUTTONPIN, INPUT);
+  switch(curr_motor) {
+    case motorSelection::motor1:
+      flexStepperObj.setup();
+      break;
+    case motorSelection::motor2:
+      lightServoObj.setup();
+      break;
+    case motorSelection::motor3:
+      forceDCObj.setup();
+      forceDCObj.setMotionGains(1, 1, 0, 300*forceDCObj.scaleDegreesFactor, 40, forceDCObj.positionControl);
+      break;
+  } 
+}
+
+
+void loop() {
   
-public:
-  SensorMotorLab()
-  {}
-
-  void init() {
-    switch(curr_motor) {
-      case motorSelection::motor1:
-        flexStepperObj.setup();
-        break;
-      case motorSelection::motor2:
-        lightServoObj.setup();
-        break;
-      case motorSelection::motor3:
-        forceDCObj.setup();
-        break;
-    } 
-  }
-
-  unsigned int lastSerRead = millis();
-
-  void run() {
-
-    //handle commands if any
-
-    if (millis() - lastSerRead > 1000) {
-      lastSerRead = millis();
+  if (true) {
       if(Serial.available()){
         String command = Serial.readString();
         if(command == "motor1"){
@@ -381,12 +390,10 @@ public:
         }else if (command == "motor3"){
           curr_motor = motorSelection::motor3;
           forceDCObj.setup();
+          forceDCObj.setMotionGains(1, 1, 0, 300*forceDCObj.scaleDegreesFactor, 40, forceDCObj.positionControl);
         }
       }
-      
     }
-
-     
 
     //run motor once and get data
     float data1;
@@ -403,80 +410,34 @@ public:
         data2 = lightServoObj.sensorFeedback();
         break;
       case motorSelection::motor3:
+        int buttonSignal = digitalRead(BUTTONPIN);
+        if (buttonSignal) {
+          unsigned long timeSince = millis() - lastButtonPress;
+          if (timeSince > msDebounce) {
+            //change buttonState
+            buttonState = (buttonState + 1)%totalNumButtonStates;
+
+            //set control mode
+            forceDCObj.setMotionGains(1, 1, 0, 300*forceDCObj.scaleDegreesFactor, 40, buttonState);
+            lastButtonPress = millis();
+          } 
+        }
+        
         forceDCObj.run();
-        data1 = forceDCObj.motorFeedback();
+        if (forceDCObj.positionControl) {
+          data1 = forceDCObj.motorFeedback();
+          
+        } else {
+          data1 = forceDCObj.revsPerMin;
+        }
+        streamer.sync("dcPosControl", forceDCObj.positionControl);
         data2 = forceDCObj.sensorFeedback();
+        
         break;
     }
 
     
     streamer.sync("arduinoMotorLoc", data1);
     streamer.sync("arduinoSensorLoc", data2);
-//    if (readButtonWithDebounce(BUTTONPIN, &buttonState, &prevButtonState, &lastDebounceTime)) {
-//      forceDCObj.togglePositionControl();
-//    }
-  }
-
-private:
-
-  flexStepperPair flexStepperObj;
-  lightServoPair lightServoObj;
-  forceDCPair forceDCObj;
-
-  int buttonState, prevButtonState = LOW;
-  unsigned long lastDebounceTime = 0;
-  
-  bool readButtonWithDebounce(const int BUTTON_PIN, int *buttonState, int *lastButtonState, unsigned long *lastDebounceTime) {
-    bool output = false;
-    
-    int reading = digitalRead(BUTTON_PIN);
-  
-    if (reading != *lastButtonState)
-    {
-      *lastDebounceTime = millis();
-    }
-  
-    if ((millis() - *lastDebounceTime) > 50)  // 50 ms debounce delay 
-    {
-      if (reading != *buttonState) 
-      {
-        *buttonState = reading;
-        if (*buttonState == HIGH) 
-        {
-          output = true;
-        }
-      }
-    }
-  
-    *lastButtonState = reading;
-    return output;
-  }
-
-//  void motor_selection_cb() {
-//    currMotor
-//    switch (curr_motor) {
-//      case motorSelection::motor1:
-//        flexStepperObj.setup();
-//        break;
-//      case motorSelection::motor2:
-//        lightServoObj.setup();
-//        break;
-//      case motorSelection::motor3:
-//        forceDCObj.setup();
-//        break;
-//    }
-//  }
-
-};
-
-SensorMotorLab node;
-
-void setup() {
-  Serial.begin(9600);
-  node.init();
-}
-
-void loop() {
-  node.run();
 
 }
