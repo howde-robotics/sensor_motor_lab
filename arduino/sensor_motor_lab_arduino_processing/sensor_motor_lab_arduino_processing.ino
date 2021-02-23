@@ -204,11 +204,8 @@ struct forceDCPair {
   void run(){
     float reference;
     float current;
-
-    unsigned long now = millis();
-    while (millis() - now < 20) {
-      structEnc->read();
-    }
+    
+    structEnc->read();
   
     calculatePosVel();
     calculateForce();
@@ -345,7 +342,7 @@ class SensorMotorLab {
     motor3
   };
 
-  short int curr_motor = motorSelection::motor2;
+  short int curr_motor = motorSelection::motor3;
   
 public:
   SensorMotorLab()
@@ -365,7 +362,33 @@ public:
     } 
   }
 
+  unsigned int lastSerRead = millis();
+
   void run() {
+
+    //handle commands if any
+
+    if (millis() - lastSerRead > 1000) {
+      lastSerRead = millis();
+      if(Serial.available()){
+        String command = Serial.readString();
+        if(command == "motor1"){
+          curr_motor = motorSelection::motor1;
+          flexStepperObj.setup();
+        }else if (command == "motor2") {
+          curr_motor = motorSelection::motor2;
+          lightServoObj.setup();
+        }else if (command == "motor3"){
+          curr_motor = motorSelection::motor3;
+          forceDCObj.setup();
+        }
+      }
+      
+    }
+
+     
+
+    //run motor once and get data
     float data1;
     float data2;
     switch (curr_motor) {
@@ -449,7 +472,7 @@ private:
 SensorMotorLab node;
 
 void setup() {
-  Serial.begin(57600);
+  Serial.begin(9600);
   node.init();
 }
 

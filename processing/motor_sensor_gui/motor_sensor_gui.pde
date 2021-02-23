@@ -40,7 +40,7 @@ public float arduinoSensorLoc = 0;
 void setup(){ //same as arduino program
 
   size(1500, 1000);    //window size, (width, height)
-  streamer = new AP_Sync(this,"/dev/ttyACM0", 57600);
+  streamer = new AP_Sync(this,"/dev/ttyACM0", 9600);
   printArray(Serial.list());   //prints all available serial ports
   
   cp5 = new ControlP5(this);
@@ -185,7 +185,7 @@ public void Flex_Stepper() {
   motorChart2.hide();
   sensorChart3.hide();
   motorChart3.hide();
-  
+  streamer.send("motor1");
 }
 
 public void Light_Servo() {
@@ -197,6 +197,7 @@ public void Light_Servo() {
   motorChart2.show();
   sensorChart3.hide();
   motorChart3.hide();
+  streamer.send("motor2");
 }
 
 public void Force_DC() {
@@ -208,4 +209,5 @@ public void Force_DC() {
   motorChart2.hide();
   sensorChart3.show();
   motorChart3.show();
+  streamer.send("motor3");
 }
