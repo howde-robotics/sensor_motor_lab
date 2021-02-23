@@ -111,6 +111,12 @@ void draw(){  //same as loop in arduino
     }
   }
   
+  if (currMotorSensorPair == 2 && dcPosControl == 1) {
+    myText.show();
+  }else {
+    myText.hide();
+  }
+  
   if (currMotorSensorPair == 0){
     text(yLabelTop1, topChartX - 30, topChartY - 5);
     text(yLabelBottom1, bottomChartX - 30, bottomChartY - 5);

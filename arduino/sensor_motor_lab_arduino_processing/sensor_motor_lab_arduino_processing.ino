@@ -29,6 +29,9 @@ struct lightServoPair : abstractMotorSensorPair {
   float filter_read = 0.0;  //  filtered ambient light value
   const float filter_percent = 0.1; //  percent of prveious value used in filtered ambient light value
   float gain = 1.0;
+
+  const float emaAlpha = 2.0/(1 + 10);//exponential moving average weighting term
+  float avLux = 0;
   
   void setup() {
     pinMode(LIGHTSENSORPIN,  INPUT);  
@@ -51,7 +54,9 @@ struct lightServoPair : abstractMotorSensorPair {
     float volts = analogRead(LIGHTSENSORPIN) * 5.0 / 1024.0;
     float amps = volts/10000.00;
     float uamps = amps * 10000000;
-    return uamps * 2;
+    float lux = uamps*2;
+    avLux = (emaAlpha * lux) + (1.0 - emaAlpha) * avLux;
+    return avLux;
   }
 
   void run(){
