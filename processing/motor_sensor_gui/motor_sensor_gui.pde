@@ -37,7 +37,7 @@ float sensor3Max = 2000;
 float motor3PosMax = 360;
 float motor3VelMax = 100;
 String yLabelTop3 = "Force (g)";
-String yLabelBottom3_vel = "Velocity (RPM)";
+String yLabelBottom3_vel = "Angular Speed (RPM)";
 String yLabelBottom3_pos = "Position (degrees)";
 
 float currSensorMax = sensor1Max;
@@ -51,6 +51,8 @@ public int dcPosControl = 0;
 Button fsButton;
 Button lsButton;
 Button fdButton;
+
+Button changeDirButton;
 
 Textfield myText;
 
@@ -88,6 +90,13 @@ void setup(){ //same as arduino program
     .setColorBackground(color(0,0,0))
   ;
   
+  changeDirButton = cp5.addButton("Change_DC_Dir")     //"blue" is the name of button
+    .setPosition(100, 350)  //x and y coordinates of upper left corner of button
+    .setSize(120, 70)      //(width, height)
+    .activateBy(ControlP5.RELEASE)
+    .setColorBackground(color(0,0,0))
+  ;
+  
   myText = cp5.addTextfield("CMD_INPUT",80,340,150,60);
 
 }
@@ -103,19 +112,23 @@ void draw(){  //same as loop in arduino
       currMotorMax = motor3PosMax;
       motorChart3Pos.show();
       motorChart3Vel.hide();
+      myText.show();
+      changeDirButton.hide();
     } else {
       text("DC Control Mode: VELOCITY", 80, 45);
       currMotorMax = motor3VelMax;
       motorChart3Pos.hide();
       motorChart3Vel.show();
+      myText.hide();
+      changeDirButton.show();
     }
+  } else {
+    motorChart3Pos.hide();
+    motorChart3Vel.hide();
+    myText.hide();
+    changeDirButton.hide();
   }
   
-  if (currMotorSensorPair == 2 && dcPosControl == 1) {
-    myText.show();
-  }else {
-    myText.hide();
-  }
   
   if (currMotorSensorPair == 0){
     text(yLabelTop1, topChartX - 30, topChartY - 5);
@@ -300,4 +313,8 @@ public void Force_DC() {
   fsButton.setColorBackground(color(0,0,0));
   lsButton.setColorBackground(color(0,0,0));
   fdButton.setColorBackground(color(255,0,0));
+}
+
+public void Change_DC_Dir() {
+ streamer.send("dcChangeDir");
 }

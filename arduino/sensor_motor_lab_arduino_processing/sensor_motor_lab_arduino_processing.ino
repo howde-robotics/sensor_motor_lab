@@ -205,6 +205,8 @@ struct forceDCPair {
   float prevPos = 0;
   float prevTime = 0;
 
+  int changeDir = 1;
+  
   void setup(){
     pinMode(FSR_PIN, INPUT);
     pinMode(I1_PIN, OUTPUT);
@@ -243,14 +245,14 @@ struct forceDCPair {
   bool wrappedAround = false;
     
   void calculatePosVel(){
-    rotorPosition = abs(enc.read());
+    rotorPosition = changeDir * abs(enc.read());
 
     unsigned long now = millis(); 
     unsigned long dt = now - prevTime;
     prevTime = now;
     float dW = 0;
     if (wrappedAround) {
-      dW = (rotorPosition + MS_PER_REV - prevPos)/float(MS_PER_REV);//fraction of a revolution 0-1
+      dW = (rotorPosition + changeDir * MS_PER_REV - prevPos)/float(MS_PER_REV);//fraction of a revolution 0-1
       wrappedAround = false;
     } else {
       dW = (rotorPosition - prevPos)/float(MS_PER_REV);
@@ -259,11 +261,11 @@ struct forceDCPair {
     if (dt > 0) {
       instW = dW / dt * 1000 * 60;
     }
-    revsPerMin = (emaAlpha * instW) + (1.0 - emaAlpha) * revsPerMin ;
+    revsPerMin = changeDir * (emaAlpha * instW) + (1.0 - emaAlpha) * revsPerMin ;
     prevPos = rotorPosition;
     
     // calculate RPM
-    if (rotorPosition >= MS_PER_REV){
+    if (abs(rotorPosition) >= MS_PER_REV){
       enc.write(0);
       wrappedAround = true;
     }
@@ -299,7 +301,7 @@ struct forceDCPair {
   }
 
   void sendMotorInput(float speed){
-    int input = (int) speed/scaleInputFactor;
+    int input = (int) changeDir * speed/scaleInputFactor;
    
     if (input >= 0){
       if (abs(input) > 10)
@@ -336,17 +338,12 @@ struct forceDCPair {
   }
 
   float motorFeedback(){
-    return rotorPosition * 360./MS_PER_REV;
+    return abs(rotorPosition * 360./MS_PER_REV);
   }
   float sensorFeedback(){
     return appliedForce;
   }
 
-  void processGuiCommand(float cmd){
-    if (positionControl){
-      desiredPosition = cmd * scaleDegreesFactor;
-    }
-  }
 
 };
 
@@ -409,8 +406,8 @@ void loop() {
             forceDCObj.desiredPosition = val;
             forceDCObj.desiredRPM = 0;
           }
-          
-          
+        } else if (command == "dcChangeDir") {
+          forceDCObj.changeDir = -1 * forceDCObj.changeDir;
         }
       }
     }
@@ -439,6 +436,7 @@ void loop() {
 
             //set control mode
             forceDCObj.setMotionGains(1, 1, 0, 300*forceDCObj.scaleDegreesFactor, 40, buttonState);
+            forceDCObj.changeDir = 1;
             lastButtonPress = millis();
           } 
         }
@@ -448,7 +446,7 @@ void loop() {
           data1 = forceDCObj.motorFeedback();
           
         } else {
-          data1 = forceDCObj.revsPerMin;
+          data1 = abs(forceDCObj.revsPerMin);
         }
         streamer.sync("dcPosControl", forceDCObj.positionControl);
         data2 = forceDCObj.sensorFeedback();
